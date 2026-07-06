@@ -1,17 +1,18 @@
 // ── URL DEL WORKER ─────────────────────────────────────────────────────────
 const WORKER_URL = 'https://english-translator.howardmed7.workers.dev';
 
-// ── SISTEMA DE SUBTÍTULOS ──────────────────────────────────────────────────
+// ── ESTADO ─────────────────────────────────────────────────────────────────
 let subtitles = [];
 let currentSubIndex = -1;
 let isWaitingTranslation = false;
+let isSyncMode = false;
 
 // ── PARSEAR SRT ────────────────────────────────────────────────────────────
 function parseSRT(text) {
   const blocks = text.trim().split(/\n\n+/);
   return blocks.map(block => {
     const lines = block.split('\n');
-    const times = lines[1].match(/(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/);
+    const times = lines[1] && lines[1].match(/(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/);
     if (!times) return null;
     return {
       start: timeToSeconds(times[1]),
@@ -82,11 +83,53 @@ function hideLoading() {
   document.getElementById('loading-overlay').classList.remove('active');
 }
 
+// ── MODO SINCRONIZACIÓN ────────────────────────────────────────────────────
+function enterSyncMode() {
+  isSyncMode = true;
+  player.pause();
+  document.getElementById('sync-controls').style.display = 'flex';
+  document.getElementById('btn-sync').style.display = 'none';
+  updateSyncDisplay();
+}
+
+function exitSyncMode() {
+  isSyncMode = false;
+  document.getElementById('sync-controls').style.display = 'none';
+  document.getElementById('btn-sync').style.display = 'flex';
+  // Saltar el video al tiempo del subtítulo actual
+  if (subtitles[currentSubIndex]) {
+    player.currentTime = subtitles[currentSubIndex].start;
+  }
+  renderExplanation('Sincronización lista. Presiona play para continuar.');
+}
+
+function shiftSubtitle(delta) {
+  const newIndex = currentSubIndex + delta;
+  if (newIndex >= 0 && newIndex < subtitles.length) {
+    currentSubIndex = newIndex;
+    updateSyncDisplay();
+  }
+}
+
+function updateSyncDisplay() {
+  const sub = subtitles[currentSubIndex];
+  if (sub) {
+    showSubtitle(sub.text);
+    document.getElementById('sync-index').textContent = `Subtítulo ${currentSubIndex + 1} / ${subtitles.length}`;
+    document.getElementById('sync-text').textContent = sub.text;
+  }
+}
+
+document.getElementById('btn-sync').addEventListener('click', enterSyncMode);
+document.getElementById('btn-sync-done').addEventListener('click', exitSyncMode);
+document.getElementById('btn-sub-prev').addEventListener('click', () => shiftSubtitle(-1));
+document.getElementById('btn-sub-next').addEventListener('click', () => shiftSubtitle(1));
+
 // ── LÓGICA DEL VIDEO ───────────────────────────────────────────────────────
 const player = document.getElementById('player');
 
 player.addEventListener('timeupdate', () => {
-  if (isWaitingTranslation) return;
+  if (isWaitingTranslation || isSyncMode) return;
   const t = player.currentTime;
   const idx = subtitles.findIndex(s => t >= s.start && t <= s.end);
   if (idx !== -1 && idx !== currentSubIndex) {
@@ -117,7 +160,10 @@ document.getElementById('srt-input').addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => { subtitles = parseSRT(ev.target.result); };
+  reader.onload = ev => {
+    subtitles = parseSRT(ev.target.result);
+    renderExplanation(`SRT cargado: ${subtitles.length} subtítulos`);
+  };
   reader.readAsText(file);
 });
 

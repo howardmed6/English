@@ -13,11 +13,8 @@
 
     <!-- COLUMNA IZQUIERDA -->
     <div class="left-panel">
-
-      <!-- PALABRAS DEL SUBTÍTULO -->
       <div class="words-panel" id="words-panel">
         <div class="words-list" id="words-list">
-          <!-- generado por JS -->
           <div class="word-row placeholder">
             <span class="word-en">—</span>
             <span class="word-sep">:</span>
@@ -26,7 +23,6 @@
         </div>
       </div>
 
-      <!-- TRADUCCIONES DE LA ORACIÓN -->
       <div class="translations-panel" id="translations-panel">
         <div class="translation-row">
           <span class="t-label">Traducción literal:</span>
@@ -45,7 +41,6 @@
           <span class="t-value" id="t-natural">—</span>
         </div>
       </div>
-
     </div>
 
     <!-- COLUMNA DERECHA: VIDEO -->
@@ -64,15 +59,31 @@
 
   </div>
 
-  <!-- BARRA INFERIOR: EXPLICACIÓN -->
+  <!-- BARRA INFERIOR: EXPLICACIÓN + CONTROLES -->
   <div class="explanation-bar" id="explanation-bar">
     <span id="explanation-text">—</span>
   </div>
 
-  <script src="app.js"></script>
+  <!-- CONTROLES SUPERIORES -->
   <div class="file-inputs">
-  <label>Video: <input type="file" id="video-input" accept="video/*" /></label>
-  <label>SRT: <input type="file" id="srt-input" accept=".srt" /></label>
-</div>
+    <label>Video: <input type="file" id="video-input" accept="video/*" /></label>
+    <label>SRT: <input type="file" id="srt-input" accept=".srt" /></label>
+    <button class="btn-sync" id="btn-sync">⇄ Sincronizar</button>
+  </div>
+
+  <!-- PANEL SINCRONIZACIÓN -->
+  <div class="sync-controls" id="sync-controls">
+    <div class="sync-info">
+      <span id="sync-index">—</span>
+      <span id="sync-text" class="sync-text">—</span>
+    </div>
+    <div class="sync-buttons">
+      <button id="btn-sub-prev">← Anterior</button>
+      <button id="btn-sub-next">Siguiente →</button>
+      <button id="btn-sync-done" class="btn-done">✓ Listo</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
