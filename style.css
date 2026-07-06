@@ -9,9 +9,9 @@
   --text:      #e6edf3;
   --muted:     #8b949e;
   --natural:   #ffa657;
-  --panel-w:   340px;
+  --panel-w:   360px;
   --topbar-h:  44px;
-  --bar-h:     72px;
+  --bar-h:     64px;
   --font-mono: 'JetBrains Mono', monospace;
   --font-ui:   'Inter', sans-serif;
 }
@@ -22,11 +22,14 @@ html, body {
   color: var(--text);
   font-family: var(--font-ui);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ── BARRA SUPERIOR CON BOTONES ── */
+/* ── BARRA SUPERIOR ── */
 .topbar {
   height: var(--topbar-h);
+  min-height: var(--topbar-h);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   display: flex;
@@ -49,10 +52,11 @@ html, body {
 .topbar input[type="file"] {
   font-size: 11px;
   color: var(--muted);
-  max-width: 130px;
+  max-width: 140px;
 }
 
 .btn-sync {
+  margin-left: auto;
   background: transparent;
   border: 1px solid var(--border);
   color: var(--accent);
@@ -61,17 +65,17 @@ html, body {
   font-size: 12px;
   cursor: pointer;
   font-family: var(--font-ui);
-  margin-left: auto;
   white-space: nowrap;
 }
 
-.btn-sync:hover { border-color: var(--accent); background: rgba(88,166,255,0.08); }
+.btn-sync:hover { border-color: var(--accent); }
 
-/* ── LAYOUT PRINCIPAL ── */
+/* ── ÁREA PRINCIPAL (DOS COLUMNAS) ── */
 .main-area {
+  flex: 1;
   display: grid;
   grid-template-columns: var(--panel-w) 1fr;
-  height: calc(100vh - var(--topbar-h) - var(--bar-h));
+  overflow: hidden;
 }
 
 /* ── PANEL IZQUIERDO ── */
@@ -98,7 +102,6 @@ html, body {
   align-items: baseline;
   padding: 5px 14px;
   gap: 4px;
-  border-bottom: 1px solid transparent;
   transition: background 0.15s;
 }
 
@@ -116,7 +119,6 @@ html, body {
 }
 
 .word-sep { color: var(--muted); font-size: 12px; }
-
 .word-es { font-size: 11px; color: var(--text); line-height: 1.4; }
 
 /* ── PANEL TRADUCCIONES ── */
@@ -148,17 +150,16 @@ html, body {
 .right-panel {
   position: relative;
   background: #000;
-  display: flex;
-  align-items: stretch;
+  overflow: hidden;
 }
 
-.video-wrapper { position: relative; width: 100%; height: 100%; }
+.video-wrapper { width: 100%; height: 100%; position: relative; }
 
 #player { width: 100%; height: 100%; object-fit: contain; display: block; }
 
 .subtitle-overlay {
   position: absolute;
-  bottom: 56px;
+  bottom: 60px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0,0,0,0.75);
@@ -169,7 +170,6 @@ html, body {
   text-align: center;
   max-width: 82%;
   pointer-events: none;
-  white-space: pre-wrap;
   display: none;
 }
 
@@ -200,9 +200,10 @@ html, body {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── BARRA INFERIOR: EXPLICACIÓN ── */
+/* ── BARRA INFERIOR ── */
 .explanation-bar {
   height: var(--bar-h);
+  min-height: var(--bar-h);
   border-top: 1px solid var(--border);
   background: var(--surface);
   display: flex;
@@ -235,9 +236,7 @@ html, body {
 }
 
 .sync-info { display: flex; flex-direction: column; gap: 4px; }
-
 #sync-index { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
-
 .sync-text { font-size: 14px; color: var(--accent); font-weight: 500; }
 
 .sync-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -261,8 +260,6 @@ html, body {
   color: #000;
   font-weight: 600;
 }
-
-.sync-buttons .btn-done:hover { opacity: 0.85; color: #000; }
 
 /* ── SCROLLBAR ── */
 .words-panel::-webkit-scrollbar { width: 4px; }
