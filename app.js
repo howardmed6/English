@@ -1,6 +1,7 @@
 const WORKER_URL = 'https://english-translator.howardmed7.workers.dev';
 
 let subtitles = [];
+let rawSubtitles = []; // tiempos originales del SRT, sin desfase aplicado
 let currentSubIndex = -1;
 let isWaitingTranslation = false;
 let isSyncMode = false;
@@ -268,13 +269,39 @@ document.getElementById('btn-sync-done').addEventListener('click', exitSyncMode)
 document.getElementById('btn-sub-prev').addEventListener('click', () => shiftSubtitle(-1));
 document.getElementById('btn-sub-next').addEventListener('click', () => shiftSubtitle(1));
 
+// ── DESFASE INICIAL (por intros/logos antes del video) ──────────────────────
+function applyOffset() {
+  const sign = parseInt(document.getElementById('offset-sign').value) || 1;
+  const h = parseInt(document.getElementById('offset-h').value) || 0;
+  const m = parseInt(document.getElementById('offset-m').value) || 0;
+  const s = parseInt(document.getElementById('offset-s').value) || 0;
+  const ms = parseInt(document.getElementById('offset-ms').value) || 0;
+
+  const offsetSeconds = sign * (h * 3600 + m * 60 + s + ms / 1000);
+
+  // Siempre se aplica sobre los tiempos ORIGINALES del SRT, nunca acumulado,
+  // para que puedas ajustar el valor varias veces sin que se desfase mas.
+  subtitles = rawSubtitles.map(sub => ({
+    start: sub.start + offsetSeconds,
+    end: sub.end + offsetSeconds,
+    text: sub.text
+  }));
+
+  currentSubIndex = -1;
+  hideSubtitle();
+  renderExplanationNote(`Desfase aplicado: ${sign > 0 ? '+' : '-'}${Math.abs(offsetSeconds).toFixed(3)}s`);
+}
+
+document.getElementById('btn-apply-offset').addEventListener('click', applyOffset);
+
 // ── CARGAR SRT ─────────────────────────────────────────────────────────────
 document.getElementById('srt-input').addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
-    subtitles = parseSRT(ev.target.result);
+    rawSubtitles = parseSRT(ev.target.result);
+    subtitles = rawSubtitles;
     currentSubIndex = -1;
     hideSubtitle();
     for (const key in translationCache) delete translationCache[key];

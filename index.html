@@ -19,6 +19,23 @@
     <button class="btn-sync" id="btn-sync">⇄ Sincronizar</button>
   </div>
 
+  <!-- BARRA DE DESFASE INICIAL -->
+  <div class="offset-bar" id="offset-bar">
+    <span class="offset-label">Desfase inicial (por intros antes del video):</span>
+    <select id="offset-sign">
+      <option value="1">+</option>
+      <option value="-1">−</option>
+    </select>
+    <input type="number" id="offset-h" min="0" placeholder="hh" class="offset-input" />
+    <span>:</span>
+    <input type="number" id="offset-m" min="0" max="59" placeholder="mm" class="offset-input" />
+    <span>:</span>
+    <input type="number" id="offset-s" min="0" max="59" placeholder="ss" class="offset-input" />
+    <span>.</span>
+    <input type="number" id="offset-ms" min="0" max="999" placeholder="ms" class="offset-input offset-input-ms" />
+    <button id="btn-apply-offset">Aplicar desfase</button>
+  </div>
+
   <!-- ÁREA PRINCIPAL -->
   <div class="main-area">
 

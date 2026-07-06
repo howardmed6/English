@@ -55,6 +55,46 @@ body {
   font-size: 12px;
 }
 
+/* ── BARRA DE DESFASE INICIAL ─────────────────────────────────────── */
+.offset-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.offset-label {
+  color: var(--text-secondary);
+}
+
+.offset-input {
+  width: 50px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 4px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.offset-input-ms {
+  width: 60px;
+}
+
+#offset-sign {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 4px;
+}
+
 /* ── ÁREA PRINCIPAL: LAYOUT DE DOS COLUMNAS ──────────────────────── */
 .main-area {
   display: flex;
@@ -346,13 +386,21 @@ button:active {
   transform: scale(0.98);
 }
 
-.btn-seek,
+.btn-seek {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.btn-seek:hover {
+  background: var(--accent-light);
+  color: #000;
+}
+
 .btn-sync {
   background: #333;
   color: #eee;
 }
 
-.btn-seek:hover,
 .btn-sync:hover {
   background: #444;
   color: #fff;
