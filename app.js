@@ -10,9 +10,8 @@ const player = document.getElementById('player');
 // ── PARSEAR SRT ────────────────────────────────────────────────────────────
 function parseSRT(text) {
   const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  // CORRECCIÓN CLAVE: \n\s*\n soluciona el problema si el SRT tiene espacios invisibles
   const blocks = normalized.trim().split(/\n\s*\n/);
-  
+
   const result = blocks.map(block => {
     const lines = block.split('\n');
     const times = lines[1] && lines[1].match(/(\d{2}:\d{2}:\d{2}[,\.]\d{3}) --> (\d{2}:\d{2}:\d{2}[,\.]\d{3})/);
@@ -23,7 +22,7 @@ function parseSRT(text) {
       text:  lines.slice(2).join(' ').replace(/<[^>]+>/g, '').trim()
     };
   }).filter(Boolean);
-  
+
   console.log('SRT parsed:', result.length, 'subtitles. First:', result[0]);
   return result;
 }
@@ -71,7 +70,7 @@ function renderExplanation(text) {
 
 function showSubtitle(text) {
   const el = document.getElementById('subtitle-overlay');
-  el.innerHTML = ''; // CORRECCIÓN: Limpia el texto anterior para evitar apilamiento
+  el.innerHTML = ''; // limpia el texto anterior para evitar apilamiento
   el.textContent = text;
   el.classList.add('visible');
 }
@@ -94,11 +93,15 @@ function startDetection() {
     if (isWaitingTranslation || isSyncMode || player.paused) return;
     const t = player.currentTime;
     const idx = subtitles.findIndex(s => t >= s.start && t <= s.end);
+
     if (idx !== -1 && idx !== currentSubIndex) {
       currentSubIndex = idx;
       handleSubtitle(subtitles[idx]);
     } else if (idx === -1 && currentSubIndex !== -1) {
-      // Estamos fuera de cualquier subtítulo
+      // FIX: antes esto no hacía nada y el subtítulo se quedaba
+      // pegado en pantalla hasta que empezaba el siguiente.
+      hideSubtitle();
+      currentSubIndex = -1;
     }
   }, 200);
 }
@@ -130,6 +133,10 @@ player.addEventListener('pause', stopDetection);
 player.addEventListener('ended', stopDetection);
 
 // ── SEEK ±10s ──────────────────────────────────────────────────────────────
+// NOTA: si el salto real termina siendo mayor a 10s de forma consistente,
+// el problema es el video (keyframes espaciados / GOP largo), no esta función.
+// Re-codifica el archivo con: ffmpeg -i in.mp4 -c:v libx264 -preset ultrafast
+// -crf 28 -g 25 -keyint_min 25 -sc_threshold 0 -c:a copy out.mp4
 let seekCooldown = false;
 
 function seekVideo(delta) {
@@ -137,8 +144,8 @@ function seekVideo(delta) {
   seekCooldown = true;
   setTimeout(() => seekCooldown = false, 300);
 
-  const newTime = Math.max(0, player.currentTime + delta);
-  player.currentTime = newTime;
+  const target = Math.max(0, Math.min(player.duration || Infinity, player.currentTime + delta));
+  player.currentTime = target;
   currentSubIndex = -1;
   hideSubtitle();
 }
