@@ -55,6 +55,20 @@ html, body {
   max-width: 140px;
 }
 
+.btn-seek {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  white-space: nowrap;
+}
+
+.btn-seek:hover { border-color: var(--accent); color: var(--accent); }
+
 .btn-sync {
   margin-left: auto;
   background: transparent;
@@ -169,8 +183,12 @@ html, body {
   border-radius: 4px;
   text-align: center;
   max-width: 82%;
+  max-height: 80px;
+  overflow: hidden;
   pointer-events: none;
   display: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .subtitle-overlay.visible { display: block; }
