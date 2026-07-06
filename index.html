@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="layout">
+
+    <!-- COLUMNA IZQUIERDA -->
+    <div class="left-panel">
+
+      <!-- PALABRAS DEL SUBTÍTULO -->
+      <div class="words-panel" id="words-panel">
+        <div class="words-list" id="words-list">
+          <!-- generado por JS -->
+          <div class="word-row placeholder">
+            <span class="word-en">—</span>
+            <span class="word-sep">:</span>
+            <span class="word-es">esperando subtítulo...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRADUCCIONES DE LA ORACIÓN -->
+      <div class="translations-panel" id="translations-panel">
+        <div class="translation-row">
+          <span class="t-label">Traducción literal:</span>
+          <span class="t-value" id="t-literal">—</span>
+        </div>
+        <div class="translation-row alt" id="alt1-row">
+          <span class="t-label">Alternativa literal:</span>
+          <span class="t-value" id="t-alt1">—</span>
+        </div>
+        <div class="translation-row alt" id="alt2-row">
+          <span class="t-label">Alternativa literal 2:</span>
+          <span class="t-value" id="t-alt2">—</span>
+        </div>
+        <div class="translation-row natural">
+          <span class="t-label">Traducción natural:</span>
+          <span class="t-value" id="t-natural">—</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- COLUMNA DERECHA: VIDEO -->
+    <div class="right-panel">
+      <div class="video-wrapper">
+        <video id="player" controls>
+          <source src="" type="video/mp4" />
+        </video>
+        <div class="subtitle-overlay" id="subtitle-overlay"></div>
+        <div class="loading-overlay" id="loading-overlay">
+          <div class="spinner"></div>
+          <span>Traduciendo...</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BARRA INFERIOR: EXPLICACIÓN -->
+  <div class="explanation-bar" id="explanation-bar">
+    <span id="explanation-text">—</span>
+  </div>
+
+  <script src="app.js"></script>
+  <div class="file-inputs">
+  <label>Video: <input type="file" id="video-input" accept="video/*" /></label>
+  <label>SRT: <input type="file" id="srt-input" accept=".srt" /></label>
+</div>
+</body>
+</html>
