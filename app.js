@@ -208,3 +208,24 @@ document.getElementById('video-input').addEventListener('change', e => {
   currentSubIndex = -1;
   hideSubtitle();
 });
+
+// ── ATAJOS DE TECLADO ─────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return; // no interferir con inputs
+  if (isSyncMode) return;
+  switch(e.code) {
+    case 'Space':
+      e.preventDefault();
+      if (player.paused) player.play();
+      else player.pause();
+      break;
+    case 'ArrowLeft':
+      e.preventDefault();
+      seekVideo(-10);
+      break;
+    case 'ArrowRight':
+      e.preventDefault();
+      seekVideo(10);
+      break;
+  }
+});
