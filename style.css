@@ -251,15 +251,36 @@ video {
 .explanation-bar {
   background: #172a3a;
   border-top: 1px solid #004d61;
-  padding: 14px 20px;
+  padding: 16px 20px;
   transition: opacity 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.explanation-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.explanation-label {
+  font-size: 12px;
+  color: var(--accent-light);
+  text-transform: uppercase;
+  font-weight: bold;
+  letter-spacing: 0.5px;
 }
 
 .explanation-text,
-#explanation-text {
-  font-size: 14px;
+#explanation-text-1,
+#explanation-text-2,
+#explanation-text-3 {
+  font-size: 15px;
   color: #e0f7fa;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 /* ── PANEL DE SINCRONIZACIÓN ───────────────────────────────────────── */
