@@ -1,38 +1,28 @@
-// ── URL DEL WORKER ─────────────────────────────────────────────────────────
 const WORKER_URL = 'https://english-translator.howardmed7.workers.dev';
 
-// ── ESTADO ─────────────────────────────────────────────────────────────────
 let subtitles = [];
 let currentSubIndex = -1;
 let isWaitingTranslation = false;
 let isSyncMode = false;
-let trackBlobUrl = null;
 
 const player = document.getElementById('player');
 
-// ── CONVERTIR SRT A VTT ────────────────────────────────────────────────────
-function srtToVtt(srt) {
-  const normalized = srt.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const vtt = 'WEBVTT\n\n' + normalized
-    .trim()
-    .replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
-  return vtt;
-}
-
-// ── PARSEAR SRT (para nuestro array de subtítulos) ─────────────────────────
+// ── PARSEAR SRT ────────────────────────────────────────────────────────────
 function parseSRT(text) {
   const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const blocks = normalized.trim().split(/\n\n+/);
-  return blocks.map(block => {
+  const result = blocks.map(block => {
     const lines = block.split('\n');
     const times = lines[1] && lines[1].match(/(\d{2}:\d{2}:\d{2}[,\.]\d{3}) --> (\d{2}:\d{2}:\d{2}[,\.]\d{3})/);
     if (!times) return null;
     return {
       start: timeToSeconds(times[1]),
-      end: timeToSeconds(times[2]),
-      text: lines.slice(2).join(' ').replace(/<[^>]+>/g, '').trim()
+      end:   timeToSeconds(times[2]),
+      text:  lines.slice(2).join(' ').replace(/<[^>]+>/g, '').trim()
     };
   }).filter(Boolean);
+  console.log('SRT parsed:', result.length, 'subtitles. First:', result[0]);
+  return result;
 }
 
 function timeToSeconds(t) {
@@ -40,57 +30,7 @@ function timeToSeconds(t) {
   return parseFloat(h) * 3600 + parseFloat(m) * 60 + parseFloat(s);
 }
 
-// ── CARGAR TRACK VTT EN EL VIDEO ───────────────────────────────────────────
-function loadTrack(srtText) {
-  // Limpiar track anterior
-  const oldTrack = player.querySelector('track');
-  if (oldTrack) oldTrack.remove();
-  if (trackBlobUrl) URL.revokeObjectURL(trackBlobUrl);
-
-  const vtt = srtToVtt(srtText);
-  const blob = new Blob([vtt], { type: 'text/vtt' });
-  trackBlobUrl = URL.createObjectURL(blob);
-
-  const track = document.createElement('track');
-  track.kind = 'subtitles';
-  track.srclang = 'en';
-  track.src = trackBlobUrl;
-  track.default = true;
-  player.appendChild(track);
-
-  // Esperar a que cargue y activar
-  track.addEventListener('load', () => {
-    player.textTracks[0].mode = 'hidden'; // ocultamos los nativos, usamos los nuestros
-    attachCueListener();
-  });
-}
-
-// ── ESCUCHAR CUES DEL TRACK ────────────────────────────────────────────────
-function attachCueListener() {
-  const textTrack = player.textTracks[0];
-  if (!textTrack) return;
-
-  textTrack.addEventListener('cuechange', () => {
-    if (isWaitingTranslation || isSyncMode) return;
-
-    const activeCues = textTrack.activeCues;
-    if (!activeCues || activeCues.length === 0) {
-      hideSubtitle();
-      return;
-    }
-
-    const cueText = activeCues[0].text.replace(/<[^>]+>/g, '').trim();
-
-    // Buscar el índice en nuestro array
-    const idx = subtitles.findIndex(s => s.text === cueText);
-    if (idx !== -1 && idx !== currentSubIndex) {
-      currentSubIndex = idx;
-      handleSubtitle(subtitles[idx]);
-    }
-  });
-}
-
-// ── LLAMAR AL WORKER ───────────────────────────────────────────────────────
+// ── API ────────────────────────────────────────────────────────────────────
 async function translateSubtitle(text) {
   const res = await fetch(WORKER_URL, {
     method: 'POST',
@@ -100,27 +40,25 @@ async function translateSubtitle(text) {
   return await res.json();
 }
 
-// ── RENDERIZAR ─────────────────────────────────────────────────────────────
+// ── RENDER ─────────────────────────────────────────────────────────────────
 function renderWords(words) {
-  const list = document.getElementById('words-list');
-  list.innerHTML = words.map(w => `
+  document.getElementById('words-list').innerHTML = words.map(w => `
     <div class="word-row">
       <span class="word-en">${w.english}</span>
       <span class="word-sep">:</span>
       <span class="word-es">${w.meanings.slice(0, 6).join(', ')}</span>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function renderTranslations(t) {
   document.getElementById('t-literal').textContent = t.literal || '—';
   document.getElementById('t-natural').textContent = t.natural || '—';
-  const alt1Row = document.getElementById('alt1-row');
-  const alt2Row = document.getElementById('alt2-row');
-  if (t.alt1) { document.getElementById('t-alt1').textContent = t.alt1; alt1Row.style.display = 'flex'; }
-  else alt1Row.style.display = 'none';
-  if (t.alt2) { document.getElementById('t-alt2').textContent = t.alt2; alt2Row.style.display = 'flex'; }
-  else alt2Row.style.display = 'none';
+  const a1 = document.getElementById('alt1-row');
+  const a2 = document.getElementById('alt2-row');
+  if (t.alt1) { document.getElementById('t-alt1').textContent = t.alt1; a1.style.display = 'flex'; }
+  else a1.style.display = 'none';
+  if (t.alt2) { document.getElementById('t-alt2').textContent = t.alt2; a2.style.display = 'flex'; }
+  else a2.style.display = 'none';
 }
 
 function renderExplanation(text) {
@@ -140,15 +78,34 @@ function hideSubtitle() {
   el.classList.remove('visible');
 }
 
-function showLoading() {
-  document.getElementById('loading-overlay').classList.add('active');
+function showLoading() { document.getElementById('loading-overlay').classList.add('active'); }
+function hideLoading()  { document.getElementById('loading-overlay').classList.remove('active'); }
+
+// ── DETECCIÓN DE SUBTÍTULOS ────────────────────────────────────────────────
+// Intervalo de 200ms — más estable que timeupdate
+let detectInterval = null;
+
+function startDetection() {
+  stopDetection();
+  detectInterval = setInterval(() => {
+    if (isWaitingTranslation || isSyncMode || player.paused) return;
+    const t = player.currentTime;
+    const idx = subtitles.findIndex(s => t >= s.start && t <= s.end);
+    if (idx !== -1 && idx !== currentSubIndex) {
+      currentSubIndex = idx;
+      handleSubtitle(subtitles[idx]);
+    } else if (idx === -1 && currentSubIndex !== -1) {
+      // Estamos fuera de cualquier subtítulo
+      // No reseteamos currentSubIndex para no repetir el mismo al volver
+    }
+  }, 200);
 }
 
-function hideLoading() {
-  document.getElementById('loading-overlay').classList.remove('active');
+function stopDetection() {
+  if (detectInterval) clearInterval(detectInterval);
+  detectInterval = null;
 }
 
-// ── MANEJAR SUBTÍTULO ──────────────────────────────────────────────────────
 async function handleSubtitle(sub) {
   isWaitingTranslation = true;
   player.pause();
@@ -166,20 +123,36 @@ async function handleSubtitle(sub) {
   isWaitingTranslation = false;
 }
 
-// ── BOTONES ±10 SEGUNDOS ───────────────────────────────────────────────────
+player.addEventListener('play',  startDetection);
+player.addEventListener('pause', stopDetection);
+player.addEventListener('ended', stopDetection);
+
+// ── SEEK ±10s ──────────────────────────────────────────────────────────────
+let seekCooldown = false;
+
 function seekVideo(delta) {
-  player.currentTime = Math.max(0, player.currentTime + delta);
+  if (seekCooldown) return;
+  seekCooldown = true;
+  setTimeout(() => seekCooldown = false, 300);
+
+  const newTime = Math.max(0, player.currentTime + delta);
+  player.currentTime = newTime;
+  // Resetear índice para que el siguiente subtítulo se detecte fresco
+  currentSubIndex = -1;
+  hideSubtitle();
 }
 
 document.getElementById('btn-back10').addEventListener('click', () => seekVideo(-10));
-document.getElementById('btn-fwd10').addEventListener('click', () => seekVideo(10));
+document.getElementById('btn-fwd10').addEventListener('click',  () => seekVideo(10));
 
-// ── MODO SINCRONIZACIÓN ────────────────────────────────────────────────────
+// ── SINCRONIZACIÓN ─────────────────────────────────────────────────────────
 function enterSyncMode() {
   isSyncMode = true;
+  stopDetection();
   player.pause();
   document.getElementById('sync-controls').style.display = 'flex';
   document.getElementById('btn-sync').style.display = 'none';
+  if (currentSubIndex === -1 && subtitles.length > 0) currentSubIndex = 0;
   updateSyncDisplay();
 }
 
@@ -187,27 +160,22 @@ function exitSyncMode() {
   isSyncMode = false;
   document.getElementById('sync-controls').style.display = 'none';
   document.getElementById('btn-sync').style.display = 'flex';
-  if (subtitles[currentSubIndex]) {
-    player.currentTime = subtitles[currentSubIndex].start;
-  }
+  if (subtitles[currentSubIndex]) player.currentTime = subtitles[currentSubIndex].start;
   renderExplanation('Sincronización lista. Presiona play para continuar.');
 }
 
 function shiftSubtitle(delta) {
-  const newIndex = currentSubIndex + delta;
-  if (newIndex >= 0 && newIndex < subtitles.length) {
-    currentSubIndex = newIndex;
-    updateSyncDisplay();
-  }
+  const idx = Math.max(0, Math.min(subtitles.length - 1, currentSubIndex + delta));
+  currentSubIndex = idx;
+  updateSyncDisplay();
 }
 
 function updateSyncDisplay() {
   const sub = subtitles[currentSubIndex];
-  if (sub) {
-    showSubtitle(sub.text);
-    document.getElementById('sync-index').textContent = `Subtítulo ${currentSubIndex + 1} / ${subtitles.length}`;
-    document.getElementById('sync-text').textContent = sub.text;
-  }
+  if (!sub) return;
+  showSubtitle(sub.text);
+  document.getElementById('sync-index').textContent = `Subtítulo ${currentSubIndex + 1} / ${subtitles.length}`;
+  document.getElementById('sync-text').textContent = sub.text;
 }
 
 document.getElementById('btn-sync').addEventListener('click', enterSyncMode);
@@ -221,11 +189,9 @@ document.getElementById('srt-input').addEventListener('change', e => {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
-    const srtText = ev.target.result;
-    subtitles = parseSRT(srtText);
+    subtitles = parseSRT(ev.target.result);
     currentSubIndex = -1;
     hideSubtitle();
-    loadTrack(srtText);
     renderExplanation(`SRT cargado: ${subtitles.length} subtítulos`);
   };
   reader.readAsText(file);
@@ -240,15 +206,15 @@ document.getElementById('video-input').addEventListener('change', e => {
   hideSubtitle();
 });
 
-// ── ATAJOS DE TECLADO ─────────────────────────────────────────────────────
+// ── TECLADO ────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
   if (isSyncMode) return;
-  switch(e.code) {
+  if (e.repeat) return; // ignorar tecla mantenida
+  switch (e.code) {
     case 'Space':
       e.preventDefault();
-      if (player.paused) player.play();
-      else player.pause();
+      player.paused ? player.play() : player.pause();
       break;
     case 'ArrowLeft':
       e.preventDefault();
