@@ -7,7 +7,7 @@ let isSyncMode = false;
 
 const player = document.getElementById('player');
 
-// ── PARSEAR SRT ────────────────────────────────────────────────────────────
+// PARSEAR SRT
 function parseSRT(text) {
   const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const blocks = normalized.trim().split(/\n\s*\n/);
@@ -28,21 +28,27 @@ function parseSRT(text) {
 }
 
 function timeToSeconds(t) {
-  const [h, m, s] = t.replace(',', '.').split(':');
+  const parts = t.replace(',', '.').split(':');
+  const h = parts[0], m = parts[1], s = parts[2];
   return parseFloat(h) * 3600 + parseFloat(m) * 60 + parseFloat(s);
 }
 
-// ── API ────────────────────────────────────────────────────────────────────
+// API
 async function translateSubtitle(text) {
   const res = await fetch(WORKER_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ subtitle: text })
   });
-  return await res.json();
+  const data = await res.json();
+  if (!res.ok) {
+    const msg = (data.detail && data.detail.error && data.detail.error.message) || data.error || ('Error ' + res.status);
+    throw new Error(msg);
+  }
+  return data;
 }
 
-// ── RENDER ─────────────────────────────────────────────────────────────────
+// RENDER
 function renderWords(words) {
   document.getElementById('words-list').innerHTML = words.map(w => `
     <div class="word-row">
@@ -53,8 +59,8 @@ function renderWords(words) {
 }
 
 function renderTranslations(t) {
-  document.getElementById('t-literal').textContent = t.literal || '—';
-  document.getElementById('t-natural').textContent = t.natural || '—';
+  document.getElementById('t-literal').textContent = t.literal || '-';
+  document.getElementById('t-natural').textContent = t.natural || '-';
   const a1 = document.getElementById('alt1-row');
   const a2 = document.getElementById('alt2-row');
   if (t.alt1) { document.getElementById('t-alt1').textContent = t.alt1; a1.style.display = 'flex'; }
@@ -64,13 +70,13 @@ function renderTranslations(t) {
 }
 
 function renderExplanation(text) {
-  document.getElementById('explanation-text').textContent = text || '—';
+  document.getElementById('explanation-text').textContent = text || '-';
   document.getElementById('explanation-bar').style.opacity = text ? '1' : '0.4';
 }
 
 function showSubtitle(text) {
   const el = document.getElementById('subtitle-overlay');
-  el.innerHTML = ''; // limpia el texto anterior para evitar apilamiento
+  el.innerHTML = '';
   el.textContent = text;
   el.classList.add('visible');
 }
@@ -84,7 +90,7 @@ function hideSubtitle() {
 function showLoading() { document.getElementById('loading-overlay').classList.add('active'); }
 function hideLoading()  { document.getElementById('loading-overlay').classList.remove('active'); }
 
-// ── DETECCIÓN DE SUBTÍTULOS ────────────────────────────────────────────────
+// DETECCION DE SUBTITULOS
 let detectInterval = null;
 
 function startDetection() {
@@ -98,8 +104,6 @@ function startDetection() {
       currentSubIndex = idx;
       handleSubtitle(subtitles[idx]);
     } else if (idx === -1 && currentSubIndex !== -1) {
-      // FIX: antes esto no hacía nada y el subtítulo se quedaba
-      // pegado en pantalla hasta que empezaba el siguiente.
       hideSubtitle();
       currentSubIndex = -1;
     }
@@ -122,7 +126,7 @@ async function handleSubtitle(sub) {
     renderTranslations(data.translations);
     renderExplanation(data.explanation);
   } catch (e) {
-    renderExplanation('Error al traducir. Presiona play para continuar.');
+    renderExplanation('ERROR: ' + e.message);
   }
   hideLoading();
   isWaitingTranslation = false;
@@ -132,11 +136,10 @@ player.addEventListener('play',  startDetection);
 player.addEventListener('pause', stopDetection);
 player.addEventListener('ended', stopDetection);
 
-// ── SEEK ±10s ──────────────────────────────────────────────────────────────
-// NOTA: si el salto real termina siendo mayor a 10s de forma consistente,
-// el problema es el video (keyframes espaciados / GOP largo), no esta función.
-// Re-codifica el archivo con: ffmpeg -i in.mp4 -c:v libx264 -preset ultrafast
-// -crf 28 -g 25 -keyint_min 25 -sc_threshold 0 -c:a copy out.mp4
+// SEEK +/-10s
+// Si el salto real es mayor a 10s de forma consistente, el problema es el
+// video (keyframes espaciados). Re-codificar con:
+// ffmpeg -i in.mp4 -c:v libx264 -preset ultrafast -crf 28 -g 25 -keyint_min 25 -sc_threshold 0 -c:a copy out.mp4
 let seekCooldown = false;
 
 function seekVideo(delta) {
@@ -153,7 +156,7 @@ function seekVideo(delta) {
 document.getElementById('btn-back10').addEventListener('click', () => seekVideo(-10));
 document.getElementById('btn-fwd10').addEventListener('click',  () => seekVideo(10));
 
-// ── SINCRONIZACIÓN ─────────────────────────────────────────────────────────
+// SINCRONIZACION
 function enterSyncMode() {
   isSyncMode = true;
   stopDetection();
@@ -169,7 +172,7 @@ function exitSyncMode() {
   document.getElementById('sync-controls').style.display = 'none';
   document.getElementById('btn-sync').style.display = 'flex';
   if (subtitles[currentSubIndex]) player.currentTime = subtitles[currentSubIndex].start;
-  renderExplanation('Sincronización lista. Presiona play para continuar.');
+  renderExplanation('Sincronizacion lista. Presiona play para continuar.');
 }
 
 function shiftSubtitle(delta) {
@@ -182,7 +185,7 @@ function updateSyncDisplay() {
   const sub = subtitles[currentSubIndex];
   if (!sub) return;
   showSubtitle(sub.text);
-  document.getElementById('sync-index').textContent = `Subtítulo ${currentSubIndex + 1} / ${subtitles.length}`;
+  document.getElementById('sync-index').textContent = 'Subtitulo ' + (currentSubIndex + 1) + ' / ' + subtitles.length;
   document.getElementById('sync-text').textContent = sub.text;
 }
 
@@ -191,7 +194,7 @@ document.getElementById('btn-sync-done').addEventListener('click', exitSyncMode)
 document.getElementById('btn-sub-prev').addEventListener('click', () => shiftSubtitle(-1));
 document.getElementById('btn-sub-next').addEventListener('click', () => shiftSubtitle(1));
 
-// ── CARGAR SRT ─────────────────────────────────────────────────────────────
+// CARGAR SRT
 document.getElementById('srt-input').addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -200,12 +203,12 @@ document.getElementById('srt-input').addEventListener('change', e => {
     subtitles = parseSRT(ev.target.result);
     currentSubIndex = -1;
     hideSubtitle();
-    renderExplanation(`SRT cargado: ${subtitles.length} subtítulos`);
+    renderExplanation('SRT cargado: ' + subtitles.length + ' subtitulos');
   };
   reader.readAsText(file);
 });
 
-// ── CARGAR VIDEO ───────────────────────────────────────────────────────────
+// CARGAR VIDEO
 document.getElementById('video-input').addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -214,11 +217,11 @@ document.getElementById('video-input').addEventListener('change', e => {
   hideSubtitle();
 });
 
-// ── TECLADO ────────────────────────────────────────────────────────────────
+// TECLADO
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
   if (isSyncMode) return;
-  if (e.repeat) return; // ignorar tecla mantenida
+  if (e.repeat) return;
   switch (e.code) {
     case 'Space':
       e.preventDefault();
