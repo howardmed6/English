@@ -6,8 +6,20 @@ let subtitles = [];
 let currentSubIndex = -1;
 let isWaitingTranslation = false;
 let isSyncMode = false;
+let trackBlobUrl = null;
 
-// ── PARSEAR SRT ────────────────────────────────────────────────────────────
+const player = document.getElementById('player');
+
+// ── CONVERTIR SRT A VTT ────────────────────────────────────────────────────
+function srtToVtt(srt) {
+  const normalized = srt.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const vtt = 'WEBVTT\n\n' + normalized
+    .trim()
+    .replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
+  return vtt;
+}
+
+// ── PARSEAR SRT (para nuestro array de subtítulos) ─────────────────────────
 function parseSRT(text) {
   const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const blocks = normalized.trim().split(/\n\n+/);
@@ -26,6 +38,56 @@ function parseSRT(text) {
 function timeToSeconds(t) {
   const [h, m, s] = t.replace(',', '.').split(':');
   return parseFloat(h) * 3600 + parseFloat(m) * 60 + parseFloat(s);
+}
+
+// ── CARGAR TRACK VTT EN EL VIDEO ───────────────────────────────────────────
+function loadTrack(srtText) {
+  // Limpiar track anterior
+  const oldTrack = player.querySelector('track');
+  if (oldTrack) oldTrack.remove();
+  if (trackBlobUrl) URL.revokeObjectURL(trackBlobUrl);
+
+  const vtt = srtToVtt(srtText);
+  const blob = new Blob([vtt], { type: 'text/vtt' });
+  trackBlobUrl = URL.createObjectURL(blob);
+
+  const track = document.createElement('track');
+  track.kind = 'subtitles';
+  track.srclang = 'en';
+  track.src = trackBlobUrl;
+  track.default = true;
+  player.appendChild(track);
+
+  // Esperar a que cargue y activar
+  track.addEventListener('load', () => {
+    player.textTracks[0].mode = 'hidden'; // ocultamos los nativos, usamos los nuestros
+    attachCueListener();
+  });
+}
+
+// ── ESCUCHAR CUES DEL TRACK ────────────────────────────────────────────────
+function attachCueListener() {
+  const textTrack = player.textTracks[0];
+  if (!textTrack) return;
+
+  textTrack.addEventListener('cuechange', () => {
+    if (isWaitingTranslation || isSyncMode) return;
+
+    const activeCues = textTrack.activeCues;
+    if (!activeCues || activeCues.length === 0) {
+      hideSubtitle();
+      return;
+    }
+
+    const cueText = activeCues[0].text.replace(/<[^>]+>/g, '').trim();
+
+    // Buscar el índice en nuestro array
+    const idx = subtitles.findIndex(s => s.text === cueText);
+    if (idx !== -1 && idx !== currentSubIndex) {
+      currentSubIndex = idx;
+      handleSubtitle(subtitles[idx]);
+    }
+  });
 }
 
 // ── LLAMAR AL WORKER ───────────────────────────────────────────────────────
@@ -86,21 +148,7 @@ function hideLoading() {
   document.getElementById('loading-overlay').classList.remove('active');
 }
 
-// ── LÓGICA DEL VIDEO ───────────────────────────────────────────────────────
-const player = document.getElementById('player');
-
-player.addEventListener('timeupdate', () => {
-  if (isWaitingTranslation || isSyncMode) return;
-  const t = player.currentTime;
-  const idx = subtitles.findIndex(s => t >= s.start && t <= s.end);
-  if (idx !== -1 && idx !== currentSubIndex) {
-    currentSubIndex = idx;
-    handleSubtitle(subtitles[idx]);
-  } else if (idx === -1) {
-    hideSubtitle();
-  }
-});
-
+// ── MANEJAR SUBTÍTULO ──────────────────────────────────────────────────────
 async function handleSubtitle(sub) {
   isWaitingTranslation = true;
   player.pause();
@@ -120,26 +168,7 @@ async function handleSubtitle(sub) {
 
 // ── BOTONES ±10 SEGUNDOS ───────────────────────────────────────────────────
 function seekVideo(delta) {
-  if (subtitles.length === 0) {
-    player.currentTime = Math.max(0, player.currentTime + delta);
-    return;
-  }
-  const newTime = Math.max(0, player.currentTime + delta);
-  player.currentTime = newTime;
-  // Buscar el subtítulo más cercano al nuevo tiempo
-  const idx = subtitles.findIndex(s => newTime >= s.start && newTime <= s.end);
-  if (idx !== -1) {
-    currentSubIndex = idx;
-  } else {
-    // Buscar el subtítulo anterior al tiempo actual
-    let prev = -1;
-    for (let i = 0; i < subtitles.length; i++) {
-      if (subtitles[i].start <= newTime) prev = i;
-      else break;
-    }
-    currentSubIndex = prev;
-    hideSubtitle();
-  }
+  player.currentTime = Math.max(0, player.currentTime + delta);
 }
 
 document.getElementById('btn-back10').addEventListener('click', () => seekVideo(-10));
@@ -192,9 +221,11 @@ document.getElementById('srt-input').addEventListener('change', e => {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
-    subtitles = parseSRT(ev.target.result);
+    const srtText = ev.target.result;
+    subtitles = parseSRT(srtText);
     currentSubIndex = -1;
     hideSubtitle();
+    loadTrack(srtText);
     renderExplanation(`SRT cargado: ${subtitles.length} subtítulos`);
   };
   reader.readAsText(file);
@@ -211,7 +242,7 @@ document.getElementById('video-input').addEventListener('change', e => {
 
 // ── ATAJOS DE TECLADO ─────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'INPUT') return; // no interferir con inputs
+  if (e.target.tagName === 'INPUT') return;
   if (isSyncMode) return;
   switch(e.code) {
     case 'Space':
