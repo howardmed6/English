@@ -191,21 +191,25 @@ html, body {
   text-overflow: ellipsis;
 }
 
-.subtitle-overlay.visible { display: block; }
-
-.loading-overlay {
+.subtitle-overlay {
   position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  font-size: 15px;
+  padding: 5px 14px;
+  border-radius: 4px;
+  text-align: center;
+  max-width: 82%;
+  max-height: 80px;
+  overflow: hidden;
+  pointer-events: none;
   display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 14px;
-  color: var(--accent);
+  white-space: normal;
+  word-wrap: break-word;
 }
-
 .loading-overlay.active { display: flex; }
 
 .spinner {
