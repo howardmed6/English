@@ -9,22 +9,72 @@
   --text:      #e6edf3;
   --muted:     #8b949e;
   --natural:   #ffa657;
-  --panel-w:   360px;
-  --bar-h:     64px;
+  --panel-w:   340px;
+  --topbar-h:  44px;
+  --bar-h:     72px;
   --font-mono: 'JetBrains Mono', monospace;
   --font-ui:   'Inter', sans-serif;
 }
 
-html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-ui); overflow: hidden; }
-
-/* LAYOUT PRINCIPAL */
-.layout {
-  display: grid;
-  grid-template-columns: var(--panel-w) 1fr;
-  height: calc(100vh - var(--bar-h));
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  overflow: hidden;
 }
 
-/* PANEL IZQUIERDO */
+/* ── BARRA SUPERIOR CON BOTONES ── */
+.topbar {
+  height: var(--topbar-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.topbar label {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.topbar input[type="file"] {
+  font-size: 11px;
+  color: var(--muted);
+  max-width: 130px;
+}
+
+.btn-sync {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.btn-sync:hover { border-color: var(--accent); background: rgba(88,166,255,0.08); }
+
+/* ── LAYOUT PRINCIPAL ── */
+.main-area {
+  display: grid;
+  grid-template-columns: var(--panel-w) 1fr;
+  height: calc(100vh - var(--topbar-h) - var(--bar-h));
+}
+
+/* ── PANEL IZQUIERDO ── */
 .left-panel {
   display: flex;
   flex-direction: column;
@@ -32,11 +82,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   overflow: hidden;
 }
 
-/* LISTA DE PALABRAS */
 .words-panel {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 0;
+  padding: 10px 0;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
@@ -45,22 +94,20 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 .word-row {
   display: grid;
-  grid-template-columns: 90px 12px 1fr;
+  grid-template-columns: 88px 10px 1fr;
   align-items: baseline;
-  padding: 6px 16px;
+  padding: 5px 14px;
   gap: 4px;
   border-bottom: 1px solid transparent;
   transition: background 0.15s;
-  cursor: default;
 }
 
 .word-row:hover { background: var(--surface); }
-
 .word-row.placeholder { opacity: 0.35; }
 
 .word-en {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--accent);
   white-space: nowrap;
@@ -68,44 +115,36 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   text-overflow: ellipsis;
 }
 
-.word-sep { color: var(--muted); font-size: 13px; }
+.word-sep { color: var(--muted); font-size: 12px; }
 
-.word-es {
-  font-size: 12px;
-  color: var(--text);
-  line-height: 1.4;
-}
+.word-es { font-size: 11px; color: var(--text); line-height: 1.4; }
 
-/* PANEL TRADUCCIONES */
+/* ── PANEL TRADUCCIONES ── */
 .translations-panel {
   border-top: 1px solid var(--border);
-  padding: 14px 16px;
+  padding: 12px 14px;
   background: var(--surface);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
+  flex-shrink: 0;
 }
 
 .translation-row { display: flex; flex-direction: column; gap: 2px; }
-.translation-row.alt { opacity: 0.75; }
+.translation-row.alt { opacity: 0.72; }
 
 .t-label {
-  font-size: 10px;
+  font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
   font-family: var(--font-mono);
 }
 
-.t-value {
-  font-size: 13px;
-  color: var(--text);
-  line-height: 1.5;
-}
-
+.t-value { font-size: 12px; color: var(--text); line-height: 1.5; }
 .translation-row.natural .t-value { color: var(--natural); font-weight: 500; }
 
-/* PANEL DERECHO: VIDEO */
+/* ── PANEL DERECHO: VIDEO ── */
 .right-panel {
   position: relative;
   background: #000;
@@ -113,32 +152,22 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   align-items: stretch;
 }
 
-.video-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
+.video-wrapper { position: relative; width: 100%; height: 100%; }
 
-#player {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
+#player { width: 100%; height: 100%; object-fit: contain; display: block; }
 
-/* SUBTÍTULO SOBRE EL VIDEO */
 .subtitle-overlay {
   position: absolute;
-  bottom: 60px;
+  bottom: 56px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0,0,0,0.72);
+  background: rgba(0,0,0,0.75);
   color: #fff;
-  font-size: 16px;
-  padding: 6px 14px;
+  font-size: 15px;
+  padding: 5px 14px;
   border-radius: 4px;
   text-align: center;
-  max-width: 80%;
+  max-width: 82%;
   pointer-events: none;
   white-space: pre-wrap;
   display: none;
@@ -146,7 +175,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 .subtitle-overlay.visible { display: block; }
 
-/* LOADING OVERLAY */
 .loading-overlay {
   position: absolute;
   inset: 0;
@@ -163,7 +191,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .loading-overlay.active { display: flex; }
 
 .spinner {
-  width: 32px; height: 32px;
+  width: 30px; height: 30px;
   border: 3px solid var(--border);
   border-top-color: var(--accent);
   border-radius: 50%;
@@ -172,81 +200,47 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* BARRA INFERIOR */
+/* ── BARRA INFERIOR: EXPLICACIÓN ── */
 .explanation-bar {
   height: var(--bar-h);
   border-top: 1px solid var(--border);
   background: var(--surface);
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  font-size: 13px;
+  padding: 0 20px;
+  font-size: 12px;
   color: var(--muted);
   line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.explanation-bar span {
   overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
-.explanation-bar span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* SCROLLBAR */
-.words-panel::-webkit-scrollbar { width: 4px; }
-.words-panel::-webkit-scrollbar-track { background: transparent; }
-.words-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-/* BOTÓN SINCRONIZAR */
-.btn-sync {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--accent);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  cursor: pointer;
-  font-family: var(--font-ui);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.btn-sync:hover { border-color: var(--accent); }
-
-/* PANEL SINCRONIZACIÓN */
+/* ── PANEL SINCRONIZACIÓN ── */
 .sync-controls {
   display: none;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: rgba(13, 17, 23, 0.95);
+  top: 0; left: 0; right: 0;
+  background: rgba(13,17,23,0.97);
   border-bottom: 2px solid var(--accent);
-  padding: 12px 24px;
-  z-index: 200;
+  padding: 14px 20px;
+  z-index: 300;
   flex-direction: column;
   gap: 10px;
 }
 
-.sync-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.sync-info { display: flex; flex-direction: column; gap: 4px; }
 
-#sync-index {
-  font-size: 11px;
-  color: var(--muted);
-  font-family: var(--font-mono);
-}
+#sync-index { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
 
-.sync-text {
-  font-size: 15px;
-  color: var(--accent);
-  font-weight: 500;
-}
+.sync-text { font-size: 14px; color: var(--accent); font-weight: 500; }
 
-.sync-buttons {
-  display: flex;
-  gap: 8px;
-}
+.sync-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .sync-buttons button {
   background: var(--surface);
@@ -269,3 +263,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 }
 
 .sync-buttons .btn-done:hover { opacity: 0.85; color: #000; }
+
+/* ── SCROLLBAR ── */
+.words-panel::-webkit-scrollbar { width: 4px; }
+.words-panel::-webkit-scrollbar-track { background: transparent; }
+.words-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }

@@ -9,7 +9,16 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="layout">
+
+  <!-- BARRA SUPERIOR -->
+  <div class="topbar">
+    <label>Video: <input type="file" id="video-input" accept="video/*" /></label>
+    <label>SRT: <input type="file" id="srt-input" accept=".srt" /></label>
+    <button class="btn-sync" id="btn-sync">⇄ Sincronizar</button>
+  </div>
+
+  <!-- ÁREA PRINCIPAL -->
+  <div class="main-area">
 
     <!-- COLUMNA IZQUIERDA -->
     <div class="left-panel">
@@ -46,9 +55,7 @@
     <!-- COLUMNA DERECHA: VIDEO -->
     <div class="right-panel">
       <div class="video-wrapper">
-        <video id="player" controls>
-          <source src="" type="video/mp4" />
-        </video>
+        <video id="player" controls></video>
         <div class="subtitle-overlay" id="subtitle-overlay"></div>
         <div class="loading-overlay" id="loading-overlay">
           <div class="spinner"></div>
@@ -59,16 +66,9 @@
 
   </div>
 
-  <!-- BARRA INFERIOR: EXPLICACIÓN + CONTROLES -->
+  <!-- BARRA INFERIOR: EXPLICACIÓN -->
   <div class="explanation-bar" id="explanation-bar">
-    <span id="explanation-text">—</span>
-  </div>
-
-  <!-- CONTROLES SUPERIORES -->
-  <div class="file-inputs">
-    <label>Video: <input type="file" id="video-input" accept="video/*" /></label>
-    <label>SRT: <input type="file" id="srt-input" accept=".srt" /></label>
-    <button class="btn-sync" id="btn-sync">⇄ Sincronizar</button>
+    <span id="explanation-text">Carga un video y un archivo SRT para comenzar.</span>
   </div>
 
   <!-- PANEL SINCRONIZACIÓN -->
