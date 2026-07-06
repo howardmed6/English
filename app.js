@@ -140,7 +140,7 @@ async function handleSubtitle(sub) {
     renderTranslations(data.translations);
     renderExplanation(data.explanation);
   } catch (e) {
-    renderExplanation('Error al traducir. Presiona play para continuar.');
+    renderExplanation('ERROR: ' + e.message);
   }
   hideLoading();
   isWaitingTranslation = false;
