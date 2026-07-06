@@ -43,13 +43,53 @@ function timeToSeconds(t) {
 }
 
 // ── API ────────────────────────────────────────────────────────────────────
+const translationCache = {}; // { [indice]: Promise<data> }
+
 async function translateSubtitle(text) {
   const res = await fetch(WORKER_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ subtitle: text })
   });
-  return await res.json();
+  const data = await res.json();
+  if (!res.ok) {
+    const msg = (data.detail && data.detail.error) || data.error || ('Error ' + res.status);
+    throw new Error(msg);
+  }
+  return data;
+}
+
+// Devuelve la promesa cacheada para ese indice, o crea una nueva si no existe.
+// Evita pedir el mismo subtitulo dos veces si ya esta en curso o resuelto.
+function getTranslation(index) {
+  if (!subtitles[index]) return null;
+  if (!translationCache[index]) {
+    translationCache[index] = translateSubtitle(subtitles[index].text);
+  }
+  return translationCache[index];
+}
+
+// Dispara en segundo plano (sin esperar) la traduccion de los siguientes
+// PREFETCH_COUNT subtitulos, para que ya esten listos cuando el usuario llegue.
+const PREFETCH_COUNT = 2;
+
+function prefetchNext(index) {
+  for (let i = 1; i <= PREFETCH_COUNT; i++) {
+    const nextIndex = index + i;
+    const sub = subtitles[nextIndex];
+    if (!sub) continue;
+    if (sub.text.length > 300) continue; // respeta el guard de tamano
+    if (!translationCache[nextIndex]) {
+      // No se espera (no await): corre de fondo mientras el usuario lee/estudia
+      translationCache[nextIndex] = translateSubtitle(sub.text).catch(e => {
+        // Si falla el prefetch, se limpia el cache para que se reintente
+        // normal cuando el usuario realmente llegue a ese subtitulo.
+        delete translationCache[nextIndex];
+        console.warn('Prefetch fallo para el subtitulo', nextIndex, ':', e.message);
+        throw e;
+      });
+    }
+  }
 }
 
 // ── RENDER ─────────────────────────────────────────────────────────────────
@@ -73,9 +113,21 @@ function renderTranslations(t) {
   else a2.style.display = 'none';
 }
 
-function renderExplanation(text) {
-  document.getElementById('explanation-text').textContent = text || '—';
-  document.getElementById('explanation-bar').style.opacity = text ? '1' : '0.4';
+function renderExplanation(data) {
+  document.getElementById('explanation-text-1').textContent = (data && data.explanation1) || '—';
+  document.getElementById('explanation-text-2').textContent = (data && data.explanation2) || '—';
+  document.getElementById('explanation-text-3').textContent = (data && data.relatedConcepts) || '—';
+  document.getElementById('explanation-bar').style.opacity = data ? '1' : '0.4';
+}
+
+function renderExplanationError(text) {
+  document.getElementById('explanation-text-1').textContent = text;
+  document.getElementById('explanation-text-2').textContent = '—';
+  document.getElementById('explanation-text-3').textContent = '—';
+}
+
+function renderExplanationNote(text) {
+  renderExplanationError(text);
 }
 
 function showSubtitle(text) {
@@ -106,7 +158,7 @@ function startDetection() {
 
     if (idx !== -1 && idx !== currentSubIndex) {
       currentSubIndex = idx;
-      handleSubtitle(subtitles[idx]);
+      handleSubtitle(subtitles[idx], idx);
     } else if (idx === -1 && currentSubIndex !== -1) {
       // FIX: antes esto no hacía nada y el subtítulo se quedaba
       // pegado en pantalla hasta que empezaba el siguiente.
@@ -121,29 +173,36 @@ function stopDetection() {
   detectInterval = null;
 }
 
-async function handleSubtitle(sub) {
+async function handleSubtitle(sub, index) {
   isWaitingTranslation = true;
   player.pause();
 
   // Guardia final: nunca envia un texto gigante a Claude, sin importar de donde venga
   if (sub.text.length > 300) {
-    renderExplanation('Subtitulo invalido (demasiado largo, ' + sub.text.length + ' caracteres). No se envio a Claude.');
+    renderExplanationError('Subtitulo invalido (demasiado largo, ' + sub.text.length + ' caracteres). No se envio a la API.');
     isWaitingTranslation = false;
     return;
   }
 
   showSubtitle(sub.text);
-  showLoading();
+
+  const cached = translationCache[index];
+  if (!cached) showLoading(); // solo muestra "cargando" si no estaba precargado
+
   try {
-    const data = await translateSubtitle(sub.text);
+    const data = await getTranslation(index);
     renderWords(data.words);
     renderTranslations(data.translations);
-    renderExplanation(data.explanation);
+    renderExplanation(data);
   } catch (e) {
-    renderExplanation('ERROR: ' + e.message);
+    delete translationCache[index]; // permite reintentar si el usuario vuelve a este subtitulo
+    renderExplanationError('ERROR: ' + e.message);
   }
   hideLoading();
   isWaitingTranslation = false;
+
+  // Adelanta los proximos subtitulos mientras el usuario lee este (video pausado)
+  prefetchNext(index);
 }
 
 player.addEventListener('play',  startDetection);
@@ -187,7 +246,7 @@ function exitSyncMode() {
   document.getElementById('sync-controls').style.display = 'none';
   document.getElementById('btn-sync').style.display = 'flex';
   if (subtitles[currentSubIndex]) player.currentTime = subtitles[currentSubIndex].start;
-  renderExplanation('Sincronización lista. Presiona play para continuar.');
+  renderExplanationNote('Sincronización lista. Presiona play para continuar.');
 }
 
 function shiftSubtitle(delta) {
@@ -218,7 +277,8 @@ document.getElementById('srt-input').addEventListener('change', e => {
     subtitles = parseSRT(ev.target.result);
     currentSubIndex = -1;
     hideSubtitle();
-    renderExplanation(`SRT cargado: ${subtitles.length} subtítulos`);
+    for (const key in translationCache) delete translationCache[key];
+    renderExplanationNote(`SRT cargado: ${subtitles.length} subtítulos`);
   };
   reader.readAsText(file);
 });
