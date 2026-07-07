@@ -206,8 +206,22 @@ async function handleSubtitle(sub, index) {
   prefetchNext(index);
 }
 
-player.addEventListener('play',  startDetection);
-player.addEventListener('pause', stopDetection);
+// ── MEDIA SESSION (para que el boton del audifono/auricular controle el video) ──
+if ('mediaSession' in navigator) {
+  navigator.mediaSession.setActionHandler('play', () => player.play());
+  navigator.mediaSession.setActionHandler('pause', () => player.pause());
+  navigator.mediaSession.setActionHandler('seekbackward', () => seekVideo(-10));
+  navigator.mediaSession.setActionHandler('seekforward', () => seekVideo(10));
+}
+
+player.addEventListener('play',  () => {
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+  startDetection();
+});
+player.addEventListener('pause', () => {
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+  stopDetection();
+});
 player.addEventListener('ended', stopDetection);
 
 // ── SEEK ±10s ──────────────────────────────────────────────────────────────
