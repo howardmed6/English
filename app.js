@@ -1,7 +1,6 @@
 const WORKER_URL = 'https://english-translator.howardmed7.workers.dev';
 
 let subtitles = [];
-let rawSubtitles = []; // tiempos originales del SRT, sin desfase aplicado
 let currentSubIndex = -1;
 let isWaitingTranslation = false;
 let isSyncMode = false;
@@ -11,8 +10,7 @@ const player = document.getElementById('player');
 // ── PARSEAR SRT ────────────────────────────────────────────────────────────
 function parseSRT(text) {
   const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const blocks = normalized.trim().split(/\n\s*\n/);
-
+  const blocks = normalized.trim().split(/\n\n+/);
   const result = blocks.map(block => {
     const lines = block.split('\n');
     const times = lines[1] && lines[1].match(/(\d{2}:\d{2}:\d{2}[,\.]\d{3}) --> (\d{2}:\d{2}:\d{2}[,\.]\d{3})/);
@@ -22,18 +20,7 @@ function parseSRT(text) {
       end:   timeToSeconds(times[2]),
       text:  lines.slice(2).join(' ').replace(/<[^>]+>/g, '').trim()
     };
-  }).filter(Boolean)
-    .filter(sub => {
-      // FIX: si el parseo falla y un "subtitulo" sale gigante (ej. el SRT
-      // completo pegado en un bloque), se descarta aqui, antes de que
-      // llegue a intentar traducirse.
-      if (sub.text.length > 300) {
-        console.warn('Subtitulo descartado por ser demasiado largo:', sub.text.length, 'caracteres');
-        return false;
-      }
-      return true;
-    });
-
+  }).filter(Boolean);
   console.log('SRT parsed:', result.length, 'subtitles. First:', result[0]);
   return result;
 }
@@ -44,53 +31,13 @@ function timeToSeconds(t) {
 }
 
 // ── API ────────────────────────────────────────────────────────────────────
-const translationCache = {}; // { [indice]: Promise<data> }
-
 async function translateSubtitle(text) {
   const res = await fetch(WORKER_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ subtitle: text })
   });
-  const data = await res.json();
-  if (!res.ok) {
-    const msg = (data.detail && data.detail.error) || data.error || ('Error ' + res.status);
-    throw new Error(msg);
-  }
-  return data;
-}
-
-// Devuelve la promesa cacheada para ese indice, o crea una nueva si no existe.
-// Evita pedir el mismo subtitulo dos veces si ya esta en curso o resuelto.
-function getTranslation(index) {
-  if (!subtitles[index]) return null;
-  if (!translationCache[index]) {
-    translationCache[index] = translateSubtitle(subtitles[index].text);
-  }
-  return translationCache[index];
-}
-
-// Dispara en segundo plano (sin esperar) la traduccion de los siguientes
-// PREFETCH_COUNT subtitulos, para que ya esten listos cuando el usuario llegue.
-const PREFETCH_COUNT = 2;
-
-function prefetchNext(index) {
-  for (let i = 1; i <= PREFETCH_COUNT; i++) {
-    const nextIndex = index + i;
-    const sub = subtitles[nextIndex];
-    if (!sub) continue;
-    if (sub.text.length > 300) continue; // respeta el guard de tamano
-    if (!translationCache[nextIndex]) {
-      // No se espera (no await): corre de fondo mientras el usuario lee/estudia
-      translationCache[nextIndex] = translateSubtitle(sub.text).catch(e => {
-        // Si falla el prefetch, se limpia el cache para que se reintente
-        // normal cuando el usuario realmente llegue a ese subtitulo.
-        delete translationCache[nextIndex];
-        console.warn('Prefetch fallo para el subtitulo', nextIndex, ':', e.message);
-        throw e;
-      });
-    }
-  }
+  return await res.json();
 }
 
 // ── RENDER ─────────────────────────────────────────────────────────────────
@@ -115,25 +62,25 @@ function renderTranslations(t) {
 }
 
 function renderExplanation(data) {
-  document.getElementById('explanation-text-1').textContent = (data && data.explanation1) || '—';
-  document.getElementById('explanation-text-2').textContent = (data && data.explanation2) || '—';
-  document.getElementById('explanation-text-3').textContent = (data && data.relatedConcepts) || '—';
-  document.getElementById('explanation-bar').style.opacity = data ? '1' : '0.4';
-}
+  const bar = document.getElementById('explanation-bar');
+  const el  = document.getElementById('explanation-text');
 
-function renderExplanationError(text) {
-  document.getElementById('explanation-text-1').textContent = text;
-  document.getElementById('explanation-text-2').textContent = '—';
-  document.getElementById('explanation-text-3').textContent = '—';
-}
+  // Construir texto de explicación a partir de los campos del worker nuevo
+  let parts = [];
+  if (data.classification === 'dificil') {
+    if (data.grammarConcept) parts.push(`[${data.grammarConcept}]`);
+    if (data.explanation1)   parts.push(data.explanation1);
+    if (data.explanation2)   parts.push(data.explanation2);
+    if (data.relatedConcepts) parts.push(data.relatedConcepts);
+  }
 
-function renderExplanationNote(text) {
-  renderExplanationError(text);
+  const text = parts.join(' — ') || null;
+  el.textContent = text || '—';
+  bar.style.opacity = text ? '1' : '0.4';
 }
 
 function showSubtitle(text) {
   const el = document.getElementById('subtitle-overlay');
-  el.innerHTML = ''; // limpia el texto anterior para evitar apilamiento
   el.textContent = text;
   el.classList.add('visible');
 }
@@ -156,15 +103,9 @@ function startDetection() {
     if (isWaitingTranslation || isSyncMode || player.paused) return;
     const t = player.currentTime;
     const idx = subtitles.findIndex(s => t >= s.start && t <= s.end);
-
     if (idx !== -1 && idx !== currentSubIndex) {
       currentSubIndex = idx;
-      handleSubtitle(subtitles[idx], idx);
-    } else if (idx === -1 && currentSubIndex !== -1) {
-      // FIX: antes esto no hacía nada y el subtítulo se quedaba
-      // pegado en pantalla hasta que empezaba el siguiente.
-      hideSubtitle();
-      currentSubIndex = -1;
+      handleSubtitle(subtitles[idx]);
     }
   }, 200);
 }
@@ -174,70 +115,36 @@ function stopDetection() {
   detectInterval = null;
 }
 
-async function handleSubtitle(sub, index) {
+async function handleSubtitle(sub) {
   isWaitingTranslation = true;
   player.pause();
-
-  // Guardia final: nunca envia un texto gigante a Claude, sin importar de donde venga
-  if (sub.text.length > 300) {
-    renderExplanationError('Subtitulo invalido (demasiado largo, ' + sub.text.length + ' caracteres). No se envio a la API.');
-    isWaitingTranslation = false;
-    return;
-  }
-
   showSubtitle(sub.text);
-
-  const cached = translationCache[index];
-  if (!cached) showLoading(); // solo muestra "cargando" si no estaba precargado
-
+  showLoading();
   try {
-    const data = await getTranslation(index);
+    const data = await translateSubtitle(sub.text);
     renderWords(data.words);
     renderTranslations(data.translations);
     renderExplanation(data);
   } catch (e) {
-    delete translationCache[index]; // permite reintentar si el usuario vuelve a este subtitulo
-    renderExplanationError('ERROR: ' + e.message);
+    document.getElementById('explanation-text').textContent = 'Error al traducir. Presiona play para continuar.';
   }
   hideLoading();
   isWaitingTranslation = false;
-
-  // Adelanta los proximos subtitulos mientras el usuario lee este (video pausado)
-  prefetchNext(index);
 }
 
-// ── MEDIA SESSION (para que el boton del audifono/auricular controle el video) ──
-if ('mediaSession' in navigator) {
-  navigator.mediaSession.setActionHandler('play', () => player.play());
-  navigator.mediaSession.setActionHandler('pause', () => player.pause());
-  navigator.mediaSession.setActionHandler('seekbackward', () => seekVideo(-10));
-  navigator.mediaSession.setActionHandler('seekforward', () => seekVideo(10));
-}
-
-player.addEventListener('play',  () => {
-  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-  startDetection();
-});
-player.addEventListener('pause', () => {
-  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
-  stopDetection();
-});
+player.addEventListener('play',  startDetection);
+player.addEventListener('pause', stopDetection);
 player.addEventListener('ended', stopDetection);
 
 // ── SEEK ±10s ──────────────────────────────────────────────────────────────
-// NOTA: si el salto real termina siendo mayor a 10s de forma consistente,
-// el problema es el video (keyframes espaciados / GOP largo), no esta función.
-// Re-codifica el archivo con: ffmpeg -i in.mp4 -c:v libx264 -preset ultrafast
-// -crf 28 -g 25 -keyint_min 25 -sc_threshold 0 -c:a copy out.mp4
 let seekCooldown = false;
 
 function seekVideo(delta) {
   if (seekCooldown) return;
   seekCooldown = true;
   setTimeout(() => seekCooldown = false, 300);
-
-  const target = Math.max(0, Math.min(player.duration || Infinity, player.currentTime + delta));
-  player.currentTime = target;
+  const newTime = Math.max(0, player.currentTime + delta);
+  player.currentTime = newTime;
   currentSubIndex = -1;
   hideSubtitle();
 }
@@ -261,7 +168,7 @@ function exitSyncMode() {
   document.getElementById('sync-controls').style.display = 'none';
   document.getElementById('btn-sync').style.display = 'flex';
   if (subtitles[currentSubIndex]) player.currentTime = subtitles[currentSubIndex].start;
-  renderExplanationNote('Sincronización lista. Presiona play para continuar.');
+  document.getElementById('explanation-text').textContent = 'Sincronización lista. Presiona play para continuar.';
 }
 
 function shiftSubtitle(delta) {
@@ -283,43 +190,16 @@ document.getElementById('btn-sync-done').addEventListener('click', exitSyncMode)
 document.getElementById('btn-sub-prev').addEventListener('click', () => shiftSubtitle(-1));
 document.getElementById('btn-sub-next').addEventListener('click', () => shiftSubtitle(1));
 
-// ── DESFASE INICIAL (por intros/logos antes del video) ──────────────────────
-function applyOffset() {
-  const sign = parseInt(document.getElementById('offset-sign').value) || 1;
-  const h = parseInt(document.getElementById('offset-h').value) || 0;
-  const m = parseInt(document.getElementById('offset-m').value) || 0;
-  const s = parseInt(document.getElementById('offset-s').value) || 0;
-  const ms = parseInt(document.getElementById('offset-ms').value) || 0;
-
-  const offsetSeconds = sign * (h * 3600 + m * 60 + s + ms / 1000);
-
-  // Siempre se aplica sobre los tiempos ORIGINALES del SRT, nunca acumulado,
-  // para que puedas ajustar el valor varias veces sin que se desfase mas.
-  subtitles = rawSubtitles.map(sub => ({
-    start: sub.start + offsetSeconds,
-    end: sub.end + offsetSeconds,
-    text: sub.text
-  }));
-
-  currentSubIndex = -1;
-  hideSubtitle();
-  renderExplanationNote(`Desfase aplicado: ${sign > 0 ? '+' : '-'}${Math.abs(offsetSeconds).toFixed(3)}s`);
-}
-
-document.getElementById('btn-apply-offset').addEventListener('click', applyOffset);
-
 // ── CARGAR SRT ─────────────────────────────────────────────────────────────
 document.getElementById('srt-input').addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
-    rawSubtitles = parseSRT(ev.target.result);
-    subtitles = rawSubtitles;
+    subtitles = parseSRT(ev.target.result);
     currentSubIndex = -1;
     hideSubtitle();
-    for (const key in translationCache) delete translationCache[key];
-    renderExplanationNote(`SRT cargado: ${subtitles.length} subtítulos`);
+    document.getElementById('explanation-text').textContent = `SRT cargado: ${subtitles.length} subtítulos`;
   };
   reader.readAsText(file);
 });
@@ -337,7 +217,7 @@ document.getElementById('video-input').addEventListener('change', e => {
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
   if (isSyncMode) return;
-  if (e.repeat) return; // ignorar tecla mantenida
+  if (e.repeat) return;
   switch (e.code) {
     case 'Space':
       e.preventDefault();
