@@ -79,9 +79,33 @@ function renderExplanation(data) {
   bar.style.opacity = text ? '1' : '0.4';
 }
 
+const SUBTITLE_COLORS = [
+  '#FF6B6B','#FF8E53','#FFC300','#F9F871','#A8E063','#56CCF2','#6FCF97','#BB6BD9',
+  '#FF9FF3','#54A0FF','#5F27CD','#00D2D3','#FF9F43','#EE5A24','#C8D6E5','#8395A7',
+  '#F368E0','#FF6B81','#FFA502','#ECCC68','#7BED9F','#70A1FF','#5352ED','#FF4757',
+  '#2ED573','#1E90FF','#FF6348','#FFA500','#FFD700','#ADFF2F','#00CED1','#DA70D6',
+  '#FF69B4','#40E0D0','#EE82EE','#FA8072','#00FA9A','#87CEEB','#DDA0DD','#F0E68C',
+  '#90EE90','#FFB6C1','#20B2AA','#87CEFA','#778899','#B0C4DE','#FFDEAD','#9ACD32',
+  '#FF7F50','#6495ED','#DC143C','#00FFFF','#00008B','#008B8B','#B8860B','#A9A9A9',
+  '#006400','#BDB76B','#8B008B','#556B2F','#FF8C00','#9932CC','#8B0000','#E9967A',
+  '#8FBC8F','#483D8B','#2F4F4F','#00CED1','#9400D3','#FF1493','#00BFFF','#696969',
+  '#1E90FF','#B22222','#FFFACD','#228B22','#FF00FF','#DCDCDC','#F8F8FF','#FFD700',
+  '#DAA520','#808080','#008000','#ADFF2F','#F0FFF0','#FF69B4','#CD5C5C','#4B0082',
+  '#FFFFF0','#F0E68C','#E6E6FA','#FFF0F5','#7CFC00','#FFFACD','#ADD8E6','#F08080',
+  '#E0FFFF','#FAFAD2','#90EE90','#FFB6C1','#FFE4B5'
+];
+
+function randomSubtitleColor() {
+  const r = Math.random();
+  if (r < 0.005) return '#000000'; // 0.5% negro
+  if (r < 0.010) return '#FFFFFF'; // 0.5% blanco
+  return SUBTITLE_COLORS[Math.floor(Math.random() * SUBTITLE_COLORS.length)];
+}
+
 function showSubtitle(text) {
   const el = document.getElementById('subtitle-overlay');
   el.textContent = text;
+  el.style.color = randomSubtitleColor();
   el.classList.add('visible');
 }
 
