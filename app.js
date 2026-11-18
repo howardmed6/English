@@ -80,6 +80,11 @@ ctrlPlay.addEventListener('click', () => {
   player.paused ? player.play() : player.pause();
 });
 
+// Click en el video → pausa/reanuda
+player.addEventListener('click', () => {
+  player.paused ? player.play() : player.pause();
+});
+
 ctrlMute.addEventListener('click', () => {
   player.muted = !player.muted;
 });
