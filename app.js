@@ -7,6 +7,145 @@ let isSyncMode = false;
 
 const player = document.getElementById('player');
 
+// ── CONTROLES SVG (rAF) ───────────────────────────────────────────────────
+const ctrlPlay       = document.getElementById('ctrl-play');
+const iconPlay       = document.getElementById('icon-play');
+const iconPause      = document.getElementById('icon-pause');
+const ctrlCurrent    = document.getElementById('ctrl-current');
+const ctrlDuration   = document.getElementById('ctrl-duration');
+const ctrlProgress   = document.getElementById('ctrl-progress');
+const ctrlFill       = document.getElementById('ctrl-progress-fill');
+const ctrlThumb      = document.getElementById('ctrl-progress-thumb');
+const ctrlMute       = document.getElementById('ctrl-mute');
+const iconVol        = document.getElementById('icon-vol');
+const iconMuted      = document.getElementById('icon-muted');
+const ctrlFs         = document.getElementById('ctrl-fullscreen');
+
+function formatTime(s) {
+  if (!isFinite(s) || s < 0) return '0:00';
+  const m = Math.floor(s / 60);
+  const ss = Math.floor(s % 60).toString().padStart(2, '0');
+  return `${m}:${ss}`;
+}
+
+// rAF loop — 60 fps, actualiza progreso y tiempo sin eventos lentos
+let rafId = null;
+function rafLoop() {
+  if (player.duration) {
+    const pct = player.currentTime / player.duration * 100;
+    ctrlCurrent.textContent = formatTime(player.currentTime);
+    ctrlFill.style.width = pct + '%';
+    ctrlThumb.style.left  = pct + '%';
+  }
+  rafId = requestAnimationFrame(rafLoop);
+}
+
+// ── HELPERS de icono ──────────────────────────────────────────────────────
+function setPlayIcon(playing) {
+  iconPlay.style.display  = playing ? 'none'  : 'block';
+  iconPause.style.display = playing ? 'block' : 'none';
+}
+
+function setMuteIcon(muted) {
+  iconVol.style.display   = muted ? 'none'  : 'block';
+  iconMuted.style.display = muted ? 'block' : 'none';
+}
+
+// ── EVENTOS DEL PLAYER ────────────────────────────────────────────────────
+player.addEventListener('loadedmetadata', () => {
+  ctrlDuration.textContent = formatTime(player.duration);
+});
+
+player.addEventListener('play', () => {
+  setPlayIcon(true);
+  if (!rafId) rafId = requestAnimationFrame(rafLoop);
+});
+
+player.addEventListener('pause', () => {
+  setPlayIcon(false);
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+});
+
+player.addEventListener('ended', () => {
+  setPlayIcon(false);
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+});
+
+player.addEventListener('volumechange', () => {
+  setMuteIcon(player.muted);
+});
+
+// ── CLICS EN CONTROLES ───────────────────────────────────────────────────
+ctrlPlay.addEventListener('click', () => {
+  player.paused ? player.play() : player.pause();
+});
+
+ctrlMute.addEventListener('click', () => {
+  player.muted = !player.muted;
+});
+
+ctrlFs.addEventListener('click', () => {
+  if (!document.fullscreenElement) player.requestFullscreen();
+  else document.exitFullscreen();
+});
+
+// ── BARRA DE PROGRESO: click ──────────────────────────────────────────────
+ctrlProgress.addEventListener('click', e => {
+  if (!player.duration) return;
+  const rect = ctrlProgress.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  player.currentTime = pct * player.duration;
+  currentSubIndex = -1;
+  hideSubtitle();
+});
+
+// ── BARRA DE PROGRESO: drag ──────────────────────────────────────────────
+let isDragging = false;
+
+ctrlProgress.addEventListener('mousedown', e => {
+  if (!player.duration) return;
+  isDragging = true;
+  seekByEvent(e);
+});
+
+document.addEventListener('mousemove', e => {
+  if (!isDragging || !player.duration) return;
+  seekByEvent(e);
+});
+
+document.addEventListener('mouseup', () => { isDragging = false; });
+
+// Touch support
+ctrlProgress.addEventListener('touchstart', e => {
+  if (!player.duration) return;
+  isDragging = true;
+  seekByTouch(e);
+}, { passive: true });
+
+document.addEventListener('touchmove', e => {
+  if (!isDragging || !player.duration) return;
+  seekByTouch(e);
+}, { passive: true });
+
+document.addEventListener('touchend', () => { isDragging = false; });
+
+function seekByEvent(e) {
+  const rect = ctrlProgress.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  player.currentTime = pct * player.duration;
+  ctrlFill.style.width = (pct * 100) + '%';
+  ctrlThumb.style.left  = (pct * 100) + '%';
+}
+
+function seekByTouch(e) {
+  const touch = e.touches[0];
+  const rect = ctrlProgress.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+  player.currentTime = pct * player.duration;
+  ctrlFill.style.width = (pct * 100) + '%';
+  ctrlThumb.style.left  = (pct * 100) + '%';
+}
+
 // ── PARSEAR SRT ────────────────────────────────────────────────────────────
 function parseSRT(text) {
   const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -66,7 +205,6 @@ function renderExplanation(data) {
   const el1 = document.getElementById('explanation-text-1');
   const el2 = document.getElementById('explanation-text-2');
   const el3 = document.getElementById('explanation-text-3');
-
   if (data.classification === 'dificil') {
     const concept = data.grammarConcept ? `[${data.grammarConcept}] ` : '';
     el1.textContent = (concept + (data.explanation1 || '')) || '—';
@@ -99,8 +237,8 @@ const SUBTITLE_COLORS = [
 
 function randomSubtitleColor() {
   const r = Math.random();
-  if (r < 0.005) return '#000000'; // 0.5% negro
-  if (r < 0.010) return '#FFFFFF'; // 0.5% blanco
+  if (r < 0.005) return '#000000';
+  if (r < 0.010) return '#FFFFFF';
   return SUBTITLE_COLORS[Math.floor(Math.random() * SUBTITLE_COLORS.length)];
 }
 
@@ -108,19 +246,6 @@ function showSubtitle(text) {
   const el = document.getElementById('subtitle-overlay');
   el.textContent = text;
   el.style.color = randomSubtitleColor();
-  // Posicionar dentro de la imagen real del video
-  const videoRect = player.getBoundingClientRect();
-  const wrapperRect = player.parentElement.getBoundingClientRect();
-  const videoRatio = player.videoWidth / player.videoHeight;
-  const displayW = videoRect.width;
-  const displayH = videoRect.height;
-  let renderedH = displayH;
-  if (videoRatio > 0) {
-    const byWidth = displayW / videoRatio;
-    renderedH = Math.min(byWidth, displayH);
-  }
-  const blackBars = (displayH - renderedH) / 2;
-  el.style.bottom = (blackBars + 55) + 'px';
   el.classList.add('visible');
 }
 

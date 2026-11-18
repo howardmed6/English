@@ -1,4 +1,4 @@
-/* ── VARIABLES Y CONFIGURACIÓN BASE ──────────────────────────────── */
+/* ── VARIABLES ──────────────────────────────────────────────────────── */
 :root {
   --bg: #121212;
   --surface: #1e1e1e;
@@ -11,11 +11,7 @@
   --border: #2d2d2d;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background-color: var(--bg);
@@ -26,237 +22,219 @@ body {
   flex-direction: column;
 }
 
-/* ── BARRA SUPERIOR ────────────────────────────────────────────────── */
+/* ── TOPBAR ─────────────────────────────────────────────────────────── */
 .topbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  background: var(--surface); border-bottom: 1px solid var(--border);
   padding: 12px 20px;
 }
-
-.topbar label {
-  font-size: 13px;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
+.topbar label { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
 .topbar input[type="file"] {
-  background: var(--bg);
-  color: var(--text-secondary);
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  cursor: pointer;
-  font-size: 12px;
+  background: var(--bg); color: var(--text-secondary);
+  padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border);
+  cursor: pointer; font-size: 12px;
 }
 
-/* ── BARRA DE DESFASE INICIAL ─────────────────────────────────────── */
+/* ── OFFSET BAR ─────────────────────────────────────────────────────── */
 .offset-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 10px 20px;
-  font-size: 13px;
-  color: var(--text-secondary);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 10px 20px; font-size: 13px; color: var(--text-secondary);
 }
-
-.offset-label {
-  color: var(--text-secondary);
-}
-
 .offset-input {
-  width: 50px;
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 6px 4px;
-  text-align: center;
-  font-size: 13px;
+  width: 50px; background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 6px 4px; text-align: center; font-size: 13px;
 }
-
-.offset-input-ms {
-  width: 60px;
-}
-
+.offset-input-ms { width: 60px; }
 #offset-sign {
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 6px 4px;
+  background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px; padding: 6px 4px;
 }
 
-/* ── ÁREA PRINCIPAL: LAYOUT DE DOS COLUMNAS ──────────────────────── */
-.main-area {
-  display: flex;
-  flex: 1;
-  gap: 16px;
-  padding: 16px 20px;
-}
+/* ── LAYOUT ─────────────────────────────────────────────────────────── */
+.main-area { display: flex; flex: 1; gap: 16px; padding: 16px 20px; }
+.left-panel { flex: 0 0 340px; display: flex; flex-direction: column; gap: 16px; }
+.right-panel { flex: 1; min-width: 0; align-self: flex-start; display: flex; flex-direction: column; }
 
-.left-panel {
-  flex: 0 0 340px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.right-panel {
-  flex: 1;
-  min-width: 0;
-}
-
-/* ── PANEL DE PALABRAS (DICCIONARIO) ─────────────────────────────── */
-.words-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.words-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 560px;
-  overflow-y: auto;
-  padding-right: 5px;
-}
-
-.word-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  background: rgba(255,255,255,0.02);
-  border-radius: 4px;
-  border: 1px solid transparent;
-}
-
-.word-row:hover {
-  background: var(--surface-hover);
-  border-color: var(--border);
-}
-
-.word-en {
-  font-weight: 600;
-  color: var(--accent-light);
-  min-width: 90px;
-  font-size: 14px;
-}
-
-.word-sep {
-  color: #555;
-  font-weight: bold;
-}
-
-.word-es {
-  color: #dddddd;
-  font-size: 13px;
-}
-
+/* ── PALABRAS ───────────────────────────────────────────────────────── */
+.words-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.words-list { display: flex; flex-direction: column; gap: 8px; max-height: 560px; overflow-y: auto; padding-right: 5px; }
+.word-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 4px; border: 1px solid transparent; }
+.word-row:hover { background: var(--surface-hover); border-color: var(--border); }
+.word-en { font-weight: 600; color: var(--accent-light); min-width: 90px; font-size: 14px; }
+.word-sep { color: #555; font-weight: bold; }
+.word-es { color: #dddddd; font-size: 13px; }
 .words-list::-webkit-scrollbar { width: 6px; }
 .words-list::-webkit-scrollbar-track { background: var(--bg); }
 .words-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 .words-list::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-/* ── PANEL DE TRADUCCIONES ────────────────────────────────────────── */
-.translations-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+/* ── TRADUCCIONES ───────────────────────────────────────────────────── */
+.translations-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.translation-row { background: rgba(0,0,0,0.2); border-left: 4px solid var(--accent); padding: 10px 14px; border-radius: 0 6px 6px 0; display: flex; flex-direction: column; gap: 4px; }
+.translation-row.alt { display: none; }
+.translation-row.natural { border-left-color: var(--accent-light); }
+.t-label { font-size: 11px; color: var(--accent); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+.t-value { font-size: 15px; color: var(--text); line-height: 1.4; }
 
-.translation-row {
-  background: rgba(0, 0, 0, 0.2);
-  border-left: 4px solid var(--accent);
-  padding: 10px 14px;
-  border-radius: 0 6px 6px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.translation-row.alt { display: none; } /* controlado por app.js: flex/none */
-
-.translation-row.natural {
-  border-left-color: var(--accent-light);
-}
-
-.t-label {
-  font-size: 11px;
-  color: var(--accent);
-  text-transform: uppercase;
-  font-weight: bold;
-  letter-spacing: 0.5px;
-}
-
-.t-value {
-  font-size: 15px;
-  color: var(--text);
-  line-height: 1.4;
-}
-
-/* ── VIDEO + OVERLAYS (punto crítico del bug del subtítulo) ──────── */
+/* ── VIDEO ──────────────────────────────────────────────────────────── */
 .video-wrapper {
   position: relative;
   width: 100%;
-  border-radius: 8px;
-  overflow: hidden;
-  display: inline-block;
-  line-height: 0;
+  display: block;
 }
 
 video {
   width: 100%;
-  max-height: 78vh;
+  max-height: 70vh;
   display: block;
-  object-fit: contain;
+  border-radius: 8px 8px 0 0;
+  background: #000;
 }
 
-.subtitle-overlay {
+/* ── CONTROLES MODERNOS SVG (fuera del video) ───────────────────────── */
+.vctrl {
+  background: #181818;
+  border: 1px solid #333;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  padding: 2px 12px 2px;
+  user-select: none;
+}
+
+/* Barra de progreso — fila superior */
+.vctrl-progress {
+  position: relative;
+  height: 5px;
+  background: #444;
+  border-radius: 3px;
+  cursor: pointer;
+  margin-bottom: 6px;
+  transition: height 0.12s;
+}
+
+.vctrl-progress:hover {
+  height: 7px;
+}
+
+.vctrl-progress-fill {
   position: absolute;
-  bottom: 90px;
-  left: 0;
-  right: 0;
-  background: transparent !important;
-  color: #ffffff;
-  font-size: 16px !important;
-  font-weight: 500;
-  padding: 0;
-  border-radius: 0;
-  text-shadow: 2px 2px 4px #000, -2px -2px 4px #000, 2px -2px 4px #000, -2px 2px 4px #000;
+  left: 0; top: 0; bottom: 0;
+  width: 0%;
+  background: var(--accent);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.vctrl-progress-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: transform 0.1s;
+  left: 0%;
+}
+
+.vctrl-progress:hover .vctrl-progress-thumb {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Fila de botones */
+.vctrl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.vctrl-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vctrl-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Botones SVG */
+.vctrl-btn {
+  background: transparent;
+  border: none;
+  color: #ccc;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.08s, color 0.08s;
+}
+
+.vctrl-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  pointer-events: none;
+}
+
+.vctrl-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+.vctrl-btn:active {
+  transform: scale(0.9);
+  background: rgba(255,255,255,0.14);
+}
+
+/* Tiempo */
+.vctrl-time {
+  font-size: 12px;
+  color: #aaa;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 0 2px;
+}
+
+.vctrl-sep {
+  font-size: 12px;
+  color: #555;
+  padding: 0 1px;
+}
+
+/* ── SUBTÍTULO ──────────────────────────────────────────────────────── */
+.subtitle-overlay {
+  display: none;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 16px 20px;
   text-align: center;
   width: 100%;
-  pointer-events: none;
-  display: none;
-  white-space: normal !important;
-  word-wrap: break-word !important;
-  word-break: break-word !important;
-  z-index: 99999 !important;
+  white-space: normal;
+  word-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.4;
 }
+.subtitle-overlay.visible { display: block; }
 
-.subtitle-overlay.visible {
-  display: block !important;
-}
-
+/* ── LOADING ────────────────────────────────────────────────────────── */
 .loading-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0,0,0,0.75);
   display: none;
   flex-direction: column;
   align-items: center;
@@ -264,163 +242,62 @@ video {
   gap: 15px;
   font-size: 16px;
   color: var(--accent-light);
-  z-index: 100000 !important;
+  z-index: 100000;
+  border-radius: 8px 8px 0 0;
 }
-
-.loading-overlay.active {
-  display: flex !important;
-}
+.loading-overlay.active { display: flex !important; }
 
 .spinner {
-  width: 40px;
-  height: 40px;
+  width: 40px; height: 40px;
   border: 4px solid rgba(255,255,255,0.1);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* ── BARRA INFERIOR: EXPLICACIÓN ──────────────────────────────────── */
+/* ── EXPLICACIÓN ────────────────────────────────────────────────────── */
 .explanation-bar {
-  background: #172a3a;
-  border-top: 1px solid #004d61;
-  padding: 16px 20px;
-  transition: opacity 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 40vh;
-  overflow-y: auto;
+  background: #172a3a; border-top: 1px solid #004d61;
+  padding: 16px 20px; transition: opacity 0.3s ease;
+  display: flex; flex-direction: column; gap: 12px;
+  max-height: 40vh; overflow-y: auto;
 }
+.explanation-block { display: flex; flex-direction: column; gap: 4px; }
+.explanation-label { font-size: 12px; color: var(--accent-light); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+#explanation-text-1, #explanation-text-2, #explanation-text-3 { font-size: 15px; color: #e0f7fa; line-height: 1.6; }
 
-.explanation-block {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+/* ── SINCRONIZACIÓN ─────────────────────────────────────────────────── */
+.sync-controls { display: none; flex-direction: column; align-items: center; gap: 15px; background: #241c1c; border-top: 1px solid #422525; padding: 20px; }
+.sync-info { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+#sync-index { font-size: 13px; color: var(--error); font-weight: bold; }
+.sync-text { font-style: italic; color: #ffbaba; text-align: center; font-size: 15px; }
+.sync-buttons { display: flex; gap: 10px; }
 
-.explanation-label {
-  font-size: 12px;
-  color: var(--accent-light);
-  text-transform: uppercase;
-  font-weight: bold;
-  letter-spacing: 0.5px;
-}
-
-.explanation-text,
-#explanation-text-1,
-#explanation-text-2,
-#explanation-text-3 {
-  font-size: 15px;
-  color: #e0f7fa;
-  line-height: 1.6;
-}
-
-/* ── PANEL DE SINCRONIZACIÓN ───────────────────────────────────────── */
-.sync-controls {
-  display: none; /* controlado por app.js */
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  background: #241c1c;
-  border-top: 1px solid #422525;
-  padding: 20px;
-}
-
-.sync-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-#sync-index {
-  font-size: 13px;
-  color: var(--error);
-  font-weight: bold;
-}
-
-.sync-text {
-  font-style: italic;
-  color: #ffbaba;
-  text-align: center;
-  font-size: 15px;
-}
-
-.sync-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-/* ── BOTONES GLOBALES ──────────────────────────────────────────────── */
+/* ── BOTONES GLOBALES ───────────────────────────────────────────────── */
 button {
-  background: var(--accent);
-  color: #ffffff;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  background: var(--accent); color: #fff; border: none;
+  padding: 10px 20px; border-radius: 4px; font-size: 14px; font-weight: bold;
+  cursor: pointer; transition: all 0.2s ease;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
 }
+button:hover { background: var(--accent-light); color: #000; box-shadow: 0 0 10px rgba(0,255,245,0.4); }
+button:active { transform: scale(0.98); }
 
-button:hover {
-  background: var(--accent-light);
-  color: #000;
-  box-shadow: 0 0 10px rgba(0, 255, 245, 0.4);
-}
+/* Reset para botones de control — no heredar el estilo global */
+.vctrl-btn { background: transparent; padding: 6px; border-radius: 6px; font-size: unset; font-weight: unset; }
+.vctrl-btn:hover { background: rgba(255,255,255,0.08); color: #fff; box-shadow: none; }
+.vctrl-btn:active { transform: scale(0.9); }
 
-button:active {
-  transform: scale(0.98);
-}
-
-.btn-seek {
-  background: var(--accent);
-  color: #ffffff;
-}
-
-.btn-seek:hover {
-  background: var(--accent-light);
-  color: #000;
-}
-
-.btn-sync {
-  background: #333;
-  color: #eee;
-}
-
-.btn-sync:hover {
-  background: #444;
-  color: #fff;
-  box-shadow: none;
-}
-
-.btn-done {
-  background: var(--error);
-}
-
-.btn-done:hover {
-  background: #ff7373;
-  box-shadow: 0 0 10px rgba(255, 82, 82, 0.4);
-}
+.btn-seek { background: var(--accent); color: #fff; }
+.btn-seek:hover { background: var(--accent-light); color: #000; }
+.btn-sync { background: #333; color: #eee; }
+.btn-sync:hover { background: #444; color: #fff; box-shadow: none; }
+.btn-done { background: var(--error); }
+.btn-done:hover { background: #ff7373; box-shadow: 0 0 10px rgba(255,82,82,0.4); }
 
 /* ── RESPONSIVE ─────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .main-area {
-    flex-direction: column;
-  }
-  .left-panel {
-    flex: 0 0 auto;
-    max-height: 45vh;
-    overflow-y: auto;
-  }
+  .main-area { flex-direction: column; }
+  .left-panel { flex: 0 0 auto; max-height: 45vh; overflow-y: auto; }
 }
