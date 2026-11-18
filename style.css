@@ -113,7 +113,6 @@ body {
 .right-panel {
   flex: 1;
   min-width: 0;
-  background: #000;
 }
 
 /* ── PANEL DE PALABRAS (DICCIONARIO) ─────────────────────────────── */
