@@ -63,20 +63,22 @@ function renderTranslations(t) {
 
 function renderExplanation(data) {
   const bar = document.getElementById('explanation-bar');
-  const el  = document.getElementById('explanation-text');
+  const el1 = document.getElementById('explanation-text-1');
+  const el2 = document.getElementById('explanation-text-2');
+  const el3 = document.getElementById('explanation-text-3');
 
-  // Construir texto de explicación a partir de los campos del worker nuevo
-  let parts = [];
   if (data.classification === 'dificil') {
-    if (data.grammarConcept) parts.push(`[${data.grammarConcept}]`);
-    if (data.explanation1)   parts.push(data.explanation1);
-    if (data.explanation2)   parts.push(data.explanation2);
-    if (data.relatedConcepts) parts.push(data.relatedConcepts);
+    const concept = data.grammarConcept ? `[${data.grammarConcept}] ` : '';
+    el1.textContent = (concept + (data.explanation1 || '')) || '—';
+    el2.textContent = data.explanation2 || '—';
+    el3.textContent = data.relatedConcepts || '—';
+    bar.style.opacity = '1';
+  } else {
+    el1.textContent = '—';
+    el2.textContent = '—';
+    el3.textContent = '—';
+    bar.style.opacity = '0.4';
   }
-
-  const text = parts.join(' — ') || null;
-  el.textContent = text || '—';
-  bar.style.opacity = text ? '1' : '0.4';
 }
 
 const SUBTITLE_COLORS = [
@@ -106,6 +108,19 @@ function showSubtitle(text) {
   const el = document.getElementById('subtitle-overlay');
   el.textContent = text;
   el.style.color = randomSubtitleColor();
+  // Posicionar dentro de la imagen real del video
+  const videoRect = player.getBoundingClientRect();
+  const wrapperRect = player.parentElement.getBoundingClientRect();
+  const videoRatio = player.videoWidth / player.videoHeight;
+  const displayW = videoRect.width;
+  const displayH = videoRect.height;
+  let renderedH = displayH;
+  if (videoRatio > 0) {
+    const byWidth = displayW / videoRatio;
+    renderedH = Math.min(byWidth, displayH);
+  }
+  const blackBars = (displayH - renderedH) / 2;
+  el.style.bottom = (blackBars + 55) + 'px';
   el.classList.add('visible');
 }
 
@@ -150,7 +165,7 @@ async function handleSubtitle(sub) {
     renderTranslations(data.translations);
     renderExplanation(data);
   } catch (e) {
-    document.getElementById('explanation-text').textContent = 'Error al traducir. Presiona play para continuar.';
+    document.getElementById('explanation-text-1').textContent = 'Error al traducir. Presiona play para continuar.';
   }
   hideLoading();
   isWaitingTranslation = false;
@@ -192,7 +207,7 @@ function exitSyncMode() {
   document.getElementById('sync-controls').style.display = 'none';
   document.getElementById('btn-sync').style.display = 'flex';
   if (subtitles[currentSubIndex]) player.currentTime = subtitles[currentSubIndex].start;
-  document.getElementById('explanation-text').textContent = 'Sincronización lista. Presiona play para continuar.';
+  document.getElementById('explanation-text-1').textContent = 'Sincronización lista. Presiona play para continuar.';
 }
 
 function shiftSubtitle(delta) {
@@ -223,7 +238,7 @@ document.getElementById('srt-input').addEventListener('change', e => {
     subtitles = parseSRT(ev.target.result);
     currentSubIndex = -1;
     hideSubtitle();
-    document.getElementById('explanation-text').textContent = `SRT cargado: ${subtitles.length} subtítulos`;
+    document.getElementById('explanation-text-1').textContent = `SRT cargado: ${subtitles.length} subtítulos`;
   };
   reader.readAsText(file);
 });

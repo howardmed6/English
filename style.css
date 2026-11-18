@@ -113,6 +113,7 @@ body {
 .right-panel {
   flex: 1;
   min-width: 0;
+  background: #000;
 }
 
 /* ── PANEL DE PALABRAS (DICCIONARIO) ─────────────────────────────── */
@@ -212,44 +213,41 @@ body {
 
 /* ── VIDEO + OVERLAYS (punto crítico del bug del subtítulo) ──────── */
 .video-wrapper {
-  position: relative;   /* <- esto faltaba: ancla los overlays absolutos */
+  position: relative;
   width: 100%;
-  height: 100%;
-  background: #000;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  display: inline-block;
+  line-height: 0;
 }
 
 video {
   width: 100%;
-  height: 100%;
   max-height: 78vh;
   display: block;
   object-fit: contain;
-  background: #000;
 }
 
 .subtitle-overlay {
   position: absolute;
-  bottom: 70px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.85) !important;
-  color: #ffffff !important;
-  font-size: 20px !important;
+  bottom: 90px;
+  left: 0;
+  right: 0;
+  background: transparent !important;
+  color: #ffffff;
+  font-size: 16px !important;
   font-weight: 500;
-  padding: 8px 18px;
-  border-radius: 6px;
+  padding: 0;
+  border-radius: 0;
+  text-shadow: 2px 2px 4px #000, -2px -2px 4px #000, 2px -2px 4px #000, -2px 2px 4px #000;
   text-align: center;
-  max-width: 85%;
+  width: 100%;
   pointer-events: none;
   display: none;
   white-space: normal !important;
   word-wrap: break-word !important;
   word-break: break-word !important;
   z-index: 99999 !important;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.8);
 }
 
 .subtitle-overlay.visible {
