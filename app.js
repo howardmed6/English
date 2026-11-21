@@ -174,7 +174,13 @@ function timeToSeconds(t) {
   return parseFloat(h) * 3600 + parseFloat(m) * 60 + parseFloat(s);
 }
 
-// ── API ────────────────────────────────────────────────────────────────────
+// ── CACHE Y PREFETCH ──────────────────────────────────────────────────────
+// Guarda traducciones ya hechas: clave = texto del subtítulo
+const translationCache = new Map();
+// Rastrea qué índices están siendo fetched para no hacer doble llamada
+const fetchingSet = new Set();
+const PREFETCH_AHEAD = 5;
+
 async function translateSubtitle(text) {
   const res = await fetch(WORKER_URL, {
     method: 'POST',
@@ -182,6 +188,19 @@ async function translateSubtitle(text) {
     body: JSON.stringify({ subtitle: text })
   });
   return await res.json();
+}
+
+// Traduce en background los próximos PREFETCH_AHEAD subtítulos sin bloquear
+function prefetchAhead(fromIdx) {
+  for (let i = fromIdx + 1; i <= fromIdx + PREFETCH_AHEAD && i < subtitles.length; i++) {
+    const sub = subtitles[i];
+    if (translationCache.has(sub.text) || fetchingSet.has(i)) continue;
+    fetchingSet.add(i);
+    translateSubtitle(sub.text)
+      .then(data => { translationCache.set(sub.text, data); })
+      .catch(() => {})
+      .finally(() => { fetchingSet.delete(i); });
+  }
 }
 
 // ── RENDER ─────────────────────────────────────────────────────────────────
@@ -274,7 +293,7 @@ function startDetection() {
     const idx = subtitles.findIndex(s => t >= s.start && t <= s.end);
     if (idx !== -1 && idx !== currentSubIndex) {
       currentSubIndex = idx;
-      handleSubtitle(subtitles[idx]);
+      handleSubtitle(subtitles[idx], idx);
     }
   }, 200);
 }
@@ -284,20 +303,33 @@ function stopDetection() {
   detectInterval = null;
 }
 
-async function handleSubtitle(sub) {
+async function handleSubtitle(sub, idx) {
   isWaitingTranslation = true;
   player.pause();
   showSubtitle(sub.text);
-  showLoading();
+
+  // Lanzar prefetch de los próximos 5 en background
+  prefetchAhead(idx);
+
   try {
-    const data = await translateSubtitle(sub.text);
+    let data;
+    if (translationCache.has(sub.text)) {
+      // Ya está en cache → instantáneo, sin loading
+      data = translationCache.get(sub.text);
+    } else {
+      // No está en cache → mostrar loading y esperar API
+      showLoading();
+      data = await translateSubtitle(sub.text);
+      translationCache.set(sub.text, data);
+      hideLoading();
+    }
     renderWords(data.words);
     renderTranslations(data.translations);
     renderExplanation(data);
   } catch (e) {
+    hideLoading();
     document.getElementById('explanation-text-1').textContent = 'Error al traducir. Presiona play para continuar.';
   }
-  hideLoading();
   isWaitingTranslation = false;
 }
 
@@ -367,6 +399,8 @@ document.getElementById('srt-input').addEventListener('change', e => {
   reader.onload = ev => {
     subtitles = parseSRT(ev.target.result);
     currentSubIndex = -1;
+    translationCache.clear();
+    fetchingSet.clear();
     hideSubtitle();
     document.getElementById('explanation-text-1').textContent = `SRT cargado: ${subtitles.length} subtítulos`;
   };
